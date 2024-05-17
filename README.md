@@ -12,7 +12,7 @@ This update needs [RocketBootStrap] and [libnotifications] , both of which we've
 
 
  
-#### Install by order : 
+#### Installation Steps (in order) : 
 
 - libSandy (Sileo)
 - ldid (Sileo)
