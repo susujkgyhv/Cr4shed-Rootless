@@ -76,7 +76,7 @@ void openURL(NSString* urlStr)
 {
 	HBPreferences* prefs = sharedPreferences();
 	[prefs setObject:value forKey:key];
-	[prefs synchronize];
+	// [prefs synchronize];
 }
 
 -(void)loadView

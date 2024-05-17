@@ -10,6 +10,9 @@
 #import "cr4shed_mach.h"
 #import "mach_utils.h"
 
+#define CLog(fmt, ...) NSLog(@"Cr4shedLogger : " fmt, ##__VA_ARGS__)
+
+
 NSDictionary* getImageInfo(OSABinaryImageSegment* img)
 {
 	if ([img isKindOfClass:[NSDictionary class]])
@@ -54,6 +57,7 @@ NSDictionary* getImageInfo(OSABinaryImageSegment* img)
 %new
 -(void)cr4_sharedInitWithTask:(mach_port_t)task exceptionType:(exception_type_t)exception thread:(mach_port_t)thread threadStateFlavor:(int*)flavour threadState:(thread_state_t)old_state threadStateCount:(mach_msg_type_number_t)old_stateCnt
 {
+
 	/*
 	There is a bug in ReportCrash, this code is here to fix it.
 	`thread` seems to always be thread 0, not the actual crashed thread.
@@ -121,6 +125,8 @@ NSDictionary* getImageInfo(OSABinaryImageSegment* img)
 //responsible for gathering the exception info
 -(void)loadBundleInfo
 {
+
+
 	#define self ((CrashReport*)self)
 	%orig;
 
@@ -140,9 +146,12 @@ NSDictionary* getImageInfo(OSABinaryImageSegment* img)
 	int threadNum = CR4GetIvar<int>(self, "_crashedThreadNumber");
 	int sig = CR4GetIvar<int>(self, "_signal");
 	
+
 	if (sig == 0 || sig == SIGKILL || isBlacklisted(self.procName))
 		return;
 	
+
+
 	mach_exception_data_type_t subtype = 0;
 	exception = mach_exception_type(sig, &subtype);
 	exception_codes[0] = subtype;
@@ -320,6 +329,7 @@ NSDictionary* getImageInfo(OSABinaryImageSegment* img)
 			free((void*)exception_codes);
 	}
 
+[self generateCr4shedReport];
 	#undef self
 }
 
@@ -327,13 +337,17 @@ NSDictionary* getImageInfo(OSABinaryImageSegment* img)
 %new
 -(void)generateCr4shedReport
 {
+
 	#define self ((CrashReport*)self)
 
 	if (self.hasBeenHandled)
 		return;
 
+
+
 	if (self.exceptionInfo)
 	{
+
 		struct exception_info* info = self.exceptionInfo;
 		NSArray* images = nil;
 		if (CR4IvarExists(self, "_binaryImages"))
@@ -442,18 +456,18 @@ NSDictionary* getImageInfo(OSABinaryImageSegment* img)
 
 		// Create the dir if it doesn't exist already:
 		BOOL isDir;
-		BOOL dirExists = [[NSFileManager defaultManager] fileExistsAtPath:@"/var/mobile/Library/Cr4shed" isDirectory:&isDir];
+		BOOL dirExists = [[NSFileManager defaultManager] fileExistsAtPath:@"/var/jb/var/mobile/Library/Cr4shed" isDirectory:&isDir];
 		if (!dirExists)
-			dirExists = createDir(@"/var/mobile/Library/Cr4shed");
+			dirExists = createDir(@"/var/jb/var/mobile/Library/Cr4shed");
 		if (!dirExists) return; //should never happen, but just in case
 
 		// Get the date to use for the filename:
 		NSString* filenameDateStr = stringFromTime(crashTime, CR4DateFormatFilename);
 
 		// Get the path for the new crash log:
-		NSString* path = [NSString stringWithFormat:@"/var/mobile/Library/Cr4shed/%@@%@.log", info->processName, filenameDateStr];
+		NSString* path = [NSString stringWithFormat:@"/var/jb/var/mobile/Library/Cr4shed/%@@%@.log", info->processName, filenameDateStr];
 		for (unsigned i = 1; [[NSFileManager defaultManager] fileExistsAtPath:path]; i++)
-			path = [NSString stringWithFormat:@"/var/mobile/Library/Cr4shed/%@@%@ (%d).log", info->processName, filenameDateStr, i];
+			path = [NSString stringWithFormat:@"/var/jb/var/mobile/Library/Cr4shed/%@@%@ (%d).log", info->processName, filenameDateStr, i];
 
 		// Create the crash log
 		writeStringToFile(logStr, path);

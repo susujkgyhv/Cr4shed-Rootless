@@ -152,5 +152,11 @@
 	</array>
 	<key>SBAppUsesLocalNotifications</key>
 	<true/>
+	<key>NSUserNotificationUsageDescription</key>
+	<string>We need permission to send you log notifications.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+	<string>fetch</string>
+	</array>
 </dict>
 </plist>

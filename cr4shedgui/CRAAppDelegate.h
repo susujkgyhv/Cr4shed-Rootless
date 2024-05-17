@@ -8,4 +8,9 @@
 	UINavigationController* _settingsViewController;
 }
 @property (nonatomic, strong) UIWindow* window;
+
 @end
+
+ 
+
+ 

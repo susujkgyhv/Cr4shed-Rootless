@@ -1,13 +1,22 @@
 @import Foundation;
 #import <sharedutils.h>
-#import <MRYIPCCenter.h>
 #import "../cr4shedmach/mach_utils.h"
 #import "cr4shed_jetsam.h"
+#import <AppSupport/CPDistributedMessagingCenter.h>
+#import <rocketbootstrap/rocketbootstrap.h>
+
 
 static NSString* serverWriteStringToFile(NSString* str, NSString* filename)
 {
-	MRYIPCCenter* ipcCenter = [MRYIPCCenter centerNamed:@"com.muirey03.cr4sheddserver"];
-	NSDictionary* reply = [ipcCenter callExternalMethod:@selector(writeString:) withArguments:@{@"string" : str, @"filename" : filename}];
+	CPDistributedMessagingCenter *c = [CPDistributedMessagingCenter centerNamed:@"com.muirey03.cr4sheddserver"];
+	if (!c || c == nil) {
+
+		return @"CPDistributedMessagingCenter is NULL";
+	}
+	rocketbootstrap_distributedmessagingcenter_apply(c);
+	NSDictionary* reply = [c sendMessageAndReceiveReplyName:@"writeString" userInfo:@{@"string" : str, @"filename" : filename}]; 
+
+	
 	return reply[@"path"];
 }
 
@@ -15,16 +24,26 @@ static NSString* serverWriteStringToFile(NSString* str, NSString* filename)
 -(BOOL)extractCorpseInfo
 {
 	BOOL ret = %orig;
-	MRYIPCCenter* ipcCenter = [MRYIPCCenter centerNamed:@"com.muirey03.cr4sheddserver"];
-	
-	BOOL shouldLogJetsam = [[ipcCenter callExternalMethod:@selector(shouldLogJetsam) withArguments:@{}] boolValue];
+
+	CPDistributedMessagingCenter *c = [CPDistributedMessagingCenter centerNamed:@"com.muirey03.cr4sheddserver"];
+	if (!c || c == nil) {
+
+		return NO;
+	}
+	rocketbootstrap_distributedmessagingcenter_apply(c);
+
+
+	NSDictionary *reply = [c sendMessageAndReceiveReplyName:@"shouldLogJetsam" userInfo:@{}];
+	BOOL shouldLogJetsam = reply[@"ret"];
 	if (!shouldLogJetsam)
 	{
 		return ret;
 	}
 	
-	NSNumber* blacklistedBool = [ipcCenter callExternalMethod:@selector(isProcessBlacklisted:) withArguments:self.execName];
-	if (!blacklistedBool.boolValue)
+
+	NSDictionary *reply2 = [c sendMessageAndReceiveReplyName:@"isProcessBlacklisted" userInfo:@{@"value" : self.execName}];
+
+	if (!reply2[@"ret"])
 	{
 		[self extractBacktraceInfo];
 		[self generateCr4shedReport];
