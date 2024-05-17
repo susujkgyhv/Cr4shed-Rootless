@@ -24,3 +24,5 @@ This update needs [RocketBootStrap] and [libnotifications] , both of which we've
 
 ## Releases : 
 [Releases](https://github.com/crazymind90/Cr4shed-Rootless/releases/tag/tweak)
+
+Tested on arm64
