@@ -7,6 +7,8 @@
 #define kProcessBlacklist @"ProcessBlacklist"
 #define kEnableJetsam @"EnableJetsam"
 
+#define CLog(fmt, ...) NSLog(@"Cr4shedLogger : " fmt, ##__VA_ARGS__)
+
 typedef NS_ENUM(NSInteger, CR4DateFormat)
 {
 	CR4DateFormatPretty,
@@ -44,3 +46,5 @@ bool wantsLogJetsam();
 void lazyLoadBundle(NSString* const bundlePath);
 void showCr4shedNotification(NSString* notifContent, NSDictionary* notifUserInfo);
 #endif
+
+ 

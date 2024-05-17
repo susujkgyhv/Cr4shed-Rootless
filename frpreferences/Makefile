@@ -1,5 +1,7 @@
 include $(THEOS)/makefiles/common.mk
 
+export THEOS_PACKAGE_SCHEME = rootless
+
 FRAMEWORK_NAME = FRPreferences
 
 FRPreferences_FILES = $(wildcard *.m)

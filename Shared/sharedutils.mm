@@ -10,6 +10,10 @@
 #import <Cephei/HBPreferences.h>
 #import <libnotifications.h>
 #include <dlfcn.h>
+#import <AppSupport/CPDistributedMessagingCenter.h>
+#import <rocketbootstrap/rocketbootstrap.h>
+
+ #define CLog(fmt, ...) NSLog(@"Cr4shedLogger : " fmt, ##__VA_ARGS__)
 
 extern "C" {
 
@@ -48,7 +52,7 @@ NSString* determineCulprit(NSArray* symbols)
 		NSString* image = getImage(symbol);
 		if (![image isEqualToString:@"Cr4shed.dylib"])
 		{
-			if ([[NSFileManager defaultManager] fileExistsAtPath:[NSString stringWithFormat:@"/Library/MobileSubstrate/DynamicLibraries/%@", image]])	//TODO: fix for rootless jailbreaks
+			if ([[NSFileManager defaultManager] fileExistsAtPath:[NSString stringWithFormat:@"/var/jb/Library/MobileSubstrate/DynamicLibraries/%@", image]])	 
 				return image;
 		}
 	}
@@ -212,7 +216,7 @@ HBPreferences* sharedPreferences()
 	static HBPreferences* prefs = nil;
 	if (!prefs)
 	{
-		NSString* const frameworkPath = @"/usr/lib/Cephei.framework";	//TODO: fix for rootless jailbreaks
+		NSString* const frameworkPath = @"/var/jb/usr/lib/Cephei.framework"; 
 		lazyLoadBundle(frameworkPath);
 		prefs = [[objc_getClass("HBPreferences") alloc] initWithIdentifier:@"com.muirey03.cr4shedprefs"];
 	}
@@ -267,20 +271,49 @@ void lazyLoadBundle(NSString* const bundlePath)
 	if (!bundle.loaded)
 		[bundle load];
 }
+ 
 
+ 
 void showCr4shedNotification(NSString* notifContent, NSDictionary* notifUserInfo)
 {
-	void* handle = dlopen("/usr/lib/libnotifications.dylib", RTLD_NOW);	//TODO: fix for rootless jailbreaks
-	if (handle) {
-		NSString* bundleID = @"com.muirey03.cr4shedgui";
-		NSString* title = @"Cr4shed";
-		[objc_getClass("CPNotification") showAlertWithTitle:title
-										message:notifContent
-										userInfo:notifUserInfo
-										badgeCount:1
-										soundName:nil
-										delay:0.
-										repeats:NO
-										bundleId:bundleID];
+	 
+	CPDistributedMessagingCenter *c = [objc_getClass("CPDistributedMessagingCenter") centerNamed:@"com.muirey03.cr4shedSBserver"];
+	if (!c || c == nil) {
+	return;
 	}
+
+	rocketbootstrap_distributedmessagingcenter_apply(c);
+
+	int badgeIntValue = 0;
+	NSDictionary* reply = [c sendMessageAndReceiveReplyName:@"retrieveappBadgeValue" userInfo:@{}]; 
+
+	if (reply) { 
+	NSString *badgeValue = reply[@"badgeValue"];
+
+	if (badgeValue) { 
+		badgeIntValue = (badgeValue.intValue + 1);
+	}
+	}
+
+	
+	void *handle = dlopen("/var/jb/usr/lib/libnotifications.dylib", RTLD_LAZY);
+	if (handle != NULL) {                                            
+    
+ 	    NSString *uid = [[NSUUID UUID] UUIDString];  
+	   	NSString* bundleID = @"com.muirey03.cr4shedgui";
+		NSString* title = @"Cr4shed";
+  	   
+	    [objc_getClass("CPNotification") showAlertWithTitle:title
+  	                                              message:notifContent
+	                                               userInfo:notifUserInfo
+	                                             badgeCount:badgeIntValue
+	                                              soundName:nil //research UNNotificationSound
+	                                                  delay:1 //cannot be zero & cannot be < 60 if repeats is YES
+	                                                repeats:NO
+	                                               bundleId:bundleID
+	                                                   uuid:uid //specify if you need to use hideAlertWithBundleId and store the string for later use
+	                                                 silent:NO];				       				       
+	}
+
+	dlclose(handle);
 }

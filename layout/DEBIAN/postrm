@@ -1,6 +1,6 @@
 #!/bin/sh
 echo "Killing cr4shedd..."
-launchctl unload /Library/LaunchDaemons/com.muirey03.cr4shedd.plist 2> /dev/null
+launchctl unload /var/jb/Library/LaunchDaemons/com.muirey03.cr4shedd.plist 2> /dev/null
 echo "Killing ReportCrash..."
 killall -9 ReportCrash 2> /dev/null
 echo "Killing ReportMemoryException..."

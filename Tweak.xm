@@ -1,16 +1,18 @@
 @import Foundation;
 
-#import <MRYIPCCenter.h>
+// #import <MRYIPCCenter.h>
 #import <sharedutils.h>
 #import "symbolication.h"
 #import <mach-o/dyld.h>
 #import <mach/mach.h>
 #import <dlfcn.h>
+#import <AppSupport/CPDistributedMessagingCenter.h>
+#import <rocketbootstrap/rocketbootstrap.h>
 
 @interface Cr4shedServer : NSObject
 + (id)sharedInstance;
--(NSDictionary*)sendNotification:(NSDictionary*)userInfo;
--(NSDictionary*)writeString:(NSDictionary*)userInfo;
+-(NSDictionary*)writeString:(NSString *)name userInfo:(NSDictionary*)userInfo;
+-(void)sendNotification:(NSString *)name userInfo:(NSDictionary*)userInfo;
 @end
 
 static NSString* writeStringToFile(NSString* str, NSString* filename)
@@ -18,12 +20,17 @@ static NSString* writeStringToFile(NSString* str, NSString* filename)
 	NSDictionary* reply;
 	if (%c(Cr4shedServer))
 	{
-		reply = [[%c(Cr4shedServer) sharedInstance] writeString:@{@"string" : str, @"filename" : filename}];
+		reply = [[%c(Cr4shedServer) sharedInstance] writeString:@"writeString" userInfo:@{@"string" : str, @"filename" : filename}];
 	}
 	else
 	{
-		MRYIPCCenter* ipcCenter = [MRYIPCCenter centerNamed:@"com.muirey03.cr4sheddserver"];
-		reply = [ipcCenter callExternalMethod:@selector(writeString:) withArguments:@{@"string" : str, @"filename" : filename}];
+		CPDistributedMessagingCenter *c = [CPDistributedMessagingCenter centerNamed:@"com.muirey03.cr4sheddserver"];
+		if (!c || c == nil) {
+		return @"CPDistributedMessagingCenter is NULL";
+		}
+        rocketbootstrap_distributedmessagingcenter_apply(c);
+        reply = [c sendMessageAndReceiveReplyName:@"writeString" userInfo:@{@"string" : str, @"filename" : filename}]; 
+
 	}
 	return reply[@"path"];
 }
@@ -35,16 +42,27 @@ static NSString* getCallStack(NSException* e)
 	return symbolStr;
 }
 
+
+
+
 static void sendNotification(NSString* content, NSDictionary* userInfo)
-{
+{	
+
+	
+ 
 	if (%c(Cr4shedServer))
 	{
-		[[%c(Cr4shedServer) sharedInstance] sendNotification:@{@"content" : content}];
+		[[%c(Cr4shedServer) sharedInstance] sendNotification:@"sendNotification" userInfo:@{@"content" : content}];
 	}
 	else
 	{
-		MRYIPCCenter* ipcCenter = [MRYIPCCenter centerNamed:@"com.muirey03.cr4sheddserver"];
-		[ipcCenter callExternalMethod:@selector(sendNotification:) withArguments:@{@"content" : content, @"userInfo" : userInfo}];
+		
+		CPDistributedMessagingCenter *c = [CPDistributedMessagingCenter centerNamed:@"com.muirey03.cr4sheddserver"];
+		if (!c || c == nil) {
+		return ;
+		}
+        rocketbootstrap_distributedmessagingcenter_apply(c);
+        [c sendMessageName:@"sendNotification" userInfo:@{@"content" : content, @"userInfo" : userInfo}];
 	}
 }
 
@@ -74,6 +92,7 @@ static unsigned long getImageVersion(uint32_t img)
 
 static void createCrashLog(NSString* specialisedInfo, NSMutableDictionary* extraInfo)
 {
+ 
 	if (isBlacklisted()) return;
 
 	markProcessAsHandled();
@@ -264,7 +283,11 @@ inline BOOL isHardBlacklisted(NSString* procName)
 }
 
 %ctor
-{
+{	
+
+	dlopen("/var/jb/usr/lib/libnotifications.dylib", RTLD_LAZY);
+	dlopen("/var/jb/usr/lib/librocketbootstrap.dylib", RTLD_LAZY);
+
 	@autoreleasepool
 	{
 		if (!isHardBlacklisted([[NSProcessInfo processInfo] processName]))
