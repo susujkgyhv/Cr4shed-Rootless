@@ -1,18 +1,35 @@
 @import CoreFoundation;
 @import Foundation;
 
-#import <MRYIPCCenter.h>
+
 #import <sharedutils.h>
 #include <pthread.h>
 #include <time.h>
+#include <dlfcn.h>
+#import <AppSupport/CPDistributedMessagingCenter.h>
+#import <rocketbootstrap/rocketbootstrap.h>
+#import <objc/runtime.h>  
+
+
+
+@interface CPDistributedMessagingCenter (Cr4shed_) 
+- (bool)doesServerExist;
+@end
+
+
 
 @interface Cr4shedServer : NSObject
 -(BOOL)createDirectoryAtPath:(NSString*)path;
+-(NSDictionary *)writeString:(NSString *)name userInfo:(NSDictionary*)userInfo;
+-(void)sendNotification:(NSString *)name userInfo:(NSDictionary*)userInfo;
+-(NSDictionary *)stringFromTime:(NSString *)name userInfo:(NSDictionary*)userInfo;
+-(NSDictionary *)isProcessBlacklisted:(NSString*)name userInfo:(NSDictionary*)procName;
+-(NSDictionary *)shouldLogJetsam;
 @end
 
 @implementation Cr4shedServer
 {
-	MRYIPCCenter* _ipcCenter;
+	CPDistributedMessagingCenter *_messagingCenter;
 }
 
 +(void)load
@@ -26,6 +43,17 @@
 	__strong static id sharedInstance = nil;
 	dispatch_once(&once, ^{
 		sharedInstance = [[self alloc] init];
+
+		void *sandyHandle = dlopen("/var/jb/usr/lib/libsandy.dylib", RTLD_LAZY);
+          if (sandyHandle) {
+
+              int (*__dyn_libSandy_applyProfile)(const char *profileName) = (int (*)(const char *))dlsym(sandyHandle, "libSandy_applyProfile");
+              if (__dyn_libSandy_applyProfile) {
+                 __dyn_libSandy_applyProfile("Cr4shedTweak");
+
+              }
+		    }
+
 	});
 	return sharedInstance;
 }
@@ -34,16 +62,28 @@
 {
 	if ((self = [super init]))
 	{
-		_ipcCenter = [MRYIPCCenter centerNamed:@"com.muirey03.cr4sheddserver"];
-		[_ipcCenter addTarget:self action:@selector(writeString:)];
-		[_ipcCenter addTarget:self action:@selector(sendNotification:)];
-		[_ipcCenter addTarget:self action:@selector(stringFromTime:)];
-		[_ipcCenter addTarget:self action:@selector(isProcessBlacklisted:)];
+		
+		_messagingCenter = [CPDistributedMessagingCenter centerNamed:@"com.muirey03.cr4sheddserver"];
+
+		if ([_messagingCenter doesServerExist]) {
+			return self;
+		}
+
+		rocketbootstrap_distributedmessagingcenter_apply(_messagingCenter);
+
+		[_messagingCenter runServerOnCurrentThread];
+
+		[_messagingCenter registerForMessageName:@"writeString" target:self selector:@selector(writeString:userInfo:)];
+		[_messagingCenter registerForMessageName:@"sendNotification" target:self selector:@selector(sendNotification:userInfo:)];
+		[_messagingCenter registerForMessageName:@"stringFromTime" target:self selector:@selector(stringFromTime:userInfo:)];
+		[_messagingCenter registerForMessageName:@"isProcessBlacklisted" target:self selector:@selector(isProcessBlacklisted:userInfo:)];
+		[_messagingCenter registerForMessageName:@"shouldLogJetsam" target:self selector:@selector(shouldLogJetsam)];
+
 	}
 	return self;
 }
 
--(NSDictionary*)writeString:(NSDictionary*)userInfo
+-(NSDictionary*)writeString:(NSString *)name userInfo:(NSDictionary*)userInfo
 {
 	//get info from userInfo:
 	NSString* str = userInfo[@"string"];
@@ -94,14 +134,16 @@
 	return [[NSFileManager defaultManager] createDirectoryAtURL:[NSURL fileURLWithPath:path] withIntermediateDirectories:YES attributes:attributes error:NULL];
 }
 
--(void)sendNotification:(NSDictionary*)userInfo
+
+-(void)sendNotification:(NSString *)name userInfo:(NSDictionary*)userInfo
 {
+ 
 	NSString* content = userInfo[@"content"];
 	NSDictionary* notifUserInfo = userInfo[@"userInfo"];
 	showCr4shedNotification(content, notifUserInfo);
 }
 
--(NSDictionary*)stringFromTime:(NSDictionary*)userInfo
+-(NSDictionary*)stringFromTime:(NSString *)name userInfo:(NSDictionary*)userInfo
 {
 	time_t t = (time_t)[userInfo[@"time"] integerValue];
 	CR4DateFormat type = (CR4DateFormat)[userInfo[@"type"] integerValue];
@@ -110,13 +152,14 @@
 	return ret ? @{@"ret" : ret} : @{};
 }
 
--(NSNumber*)isProcessBlacklisted:(NSString*)procName
-{
-	return @(isBlacklisted(procName));
+-(NSDictionary *)isProcessBlacklisted:(NSString *)name userInfo:(NSDictionary*)userInfo
+{	
+	return @{@"ret" : @(isBlacklisted(userInfo[@"value"]))};
 }
 
--(NSNumber*)shouldLogJetsam {
-	return @(wantsLogJetsam());
+-(NSDictionary *) shouldLogJetsam {
+
+	return @{@"ret" : @(wantsLogJetsam())};
 }
 @end
 
