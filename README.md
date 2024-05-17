@@ -15,7 +15,7 @@ This update needs [RocketBootStrap] and [libnotifications] , both of which we've
 #### Install by order : 
 
 - libSandy (Sileo)
-- ldid
+- ldid (Sileo)
 - RocketBootStrap in [Releases]
 - libnotifications : [libnotifications](https://github.com/crazymind90/libnotifications-Rootless/releases/tag/tweak)
 - Cr4shed in [Releases]
