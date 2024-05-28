@@ -24,52 +24,7 @@ colorWithRed:((float)((rgbValue & 0xFF0000) >> 16))/255.0 \
 green:((float)((rgbValue & 0xFF00) >> 8))/255.0 \
 blue:((float)(rgbValue & 0xFF))/255.0 alpha:1.0]
 
-
-static UIViewController *_topMostController(UIViewController *cont) {
-UIViewController *topController = cont;
- while (topController.presentedViewController) {
- topController = topController.presentedViewController;
- }
- if ([topController isKindOfClass:[UINavigationController class]]) {
- UIViewController *visible = ((UINavigationController *)topController).visibleViewController;
- if (visible) {
-topController = visible;
- }
-}
- return (topController != cont ? topController : nil);
- }
- static UIViewController *topMostController() {
- UIViewController *topController = [UIApplication sharedApplication].keyWindow.rootViewController;
- UIViewController *next = nil;
-  while ((next = _topMostController(topController)) != nil) {
- topController = next;
- }
- return topController;
-}
-
-
-static void Alert(float Timer,id Message, ...) {
-
-    va_list args;
-    va_start(args, Message);
-    NSString *Formated = [[NSString alloc] initWithFormat:Message arguments:args];
-    va_end(args);
-
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, Timer * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
-
-		UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Hola" message:Formated preferredStyle:UIAlertControllerStyleAlert];
-
-		UIAlertAction *action = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
-		}];
-
-		[alert addAction:action];
-
-		[topMostController() presentViewController:alert animated:true completion:nil];
  
-    });
-
-
-}
 
 
 @implementation CRALogController
@@ -174,6 +129,7 @@ NSMutableAttributedString *colorizerText(NSString *originalText, NSArray *wordsA
 	@"Exception subtype:",UIColorFromHEX(0xC03865),
 	@"Exception codes:",UIColorFromHEX(0xC03865),
 	@"Reason:",UIColor.greenColor,
+    @"Termination Reason:",UIColor.greenColor,
 	@"Culprit:",UIColor.greenColor,
 	
 	@"Call stack:",UIColor.orangeColor,
