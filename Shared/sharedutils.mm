@@ -10,10 +10,9 @@
 #import <Cephei/HBPreferences.h>
 #import <libnotifications.h>
 #include <dlfcn.h>
-#import <AppSupport/CPDistributedMessagingCenter.h>
-#import <rocketbootstrap/rocketbootstrap.h>
+#include <libxpcToolStrap.h>
 
- #define CLog(fmt, ...) NSLog(@"Cr4shedLogger : " fmt, ##__VA_ARGS__)
+
 
 extern "C" {
 
@@ -273,47 +272,75 @@ void lazyLoadBundle(NSString* const bundlePath)
 }
  
 
- 
+NSString *stringToHex(NSString *string) {
+    NSData *data = [string dataUsingEncoding:NSUTF8StringEncoding];
+    const unsigned char *dataBuffer = (const unsigned char *)[data bytes];
+
+    if (!dataBuffer) {
+        return [NSString string];
+    }
+
+    NSUInteger dataLength = [data length];
+    NSMutableString *hexString = [NSMutableString stringWithCapacity:(dataLength * 2)];
+    
+    for (int i = 0; i < dataLength; ++i) {
+        [hexString appendString:[NSString stringWithFormat:@"%02x", dataBuffer[i]]];
+    }
+
+    return [NSString stringWithString:hexString];
+}
+
+NSString *dictToHex(NSDictionary *dict) {
+    NSError *error;
+    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:dict options:0 error:&error];
+    
+    if (!jsonData) {
+        CLog(@"Error converting dictionary to JSON: %@", error.localizedDescription);
+        return nil;
+    }
+
+    const unsigned char *dataBuffer = (const unsigned char *)[jsonData bytes];
+
+    if (!dataBuffer) {
+        return [NSString string];
+    }
+
+    NSUInteger dataLength = [jsonData length];
+    NSMutableString *hexString = [NSMutableString stringWithCapacity:(dataLength * 2)];
+    
+    for (int i = 0; i < dataLength; ++i) {
+        [hexString appendString:[NSString stringWithFormat:@"%02x", dataBuffer[i]]];
+    }
+
+    return [NSString stringWithString:hexString];
+}
+
+
+#include <NSTask.h>
 void showCr4shedNotification(NSString* notifContent, NSDictionary* notifUserInfo)
 {
-	 
-	CPDistributedMessagingCenter *c = [objc_getClass("CPDistributedMessagingCenter") centerNamed:@"com.muirey03.cr4shedSBserver"];
-	if (!c || c == nil) {
-	return;
-	}
-
-	rocketbootstrap_distributedmessagingcenter_apply(c);
-
-	int badgeIntValue = 0;
-	NSDictionary* reply = [c sendMessageAndReceiveReplyName:@"retrieveappBadgeValue" userInfo:@{}]; 
-
-	if (reply) { 
-	NSString *badgeValue = reply[@"badgeValue"];
-
-	if (badgeValue) { 
-		badgeIntValue = (badgeValue.intValue + 1);
-	}
-	}
-
-	
-	void *handle = dlopen("/var/jb/usr/lib/libnotifications.dylib", RTLD_LAZY);
-	if (handle != NULL) {                                            
+	  
+ 
     
- 	    NSString *uid = [[NSUUID UUID] UUIDString];  
-	   	NSString* bundleID = @"com.muirey03.cr4shedgui";
-		NSString* title = @"Cr4shed";
-  	   
-	    [objc_getClass("CPNotification") showAlertWithTitle:title
-  	                                              message:notifContent
-	                                               userInfo:notifUserInfo
-	                                             badgeCount:badgeIntValue
-	                                              soundName:nil //research UNNotificationSound
-	                                                  delay:1 //cannot be zero & cannot be < 60 if repeats is YES
-	                                                repeats:NO
-	                                               bundleId:bundleID
-	                                                   uuid:uid //specify if you need to use hideAlertWithBundleId and store the string for later use
-	                                                 silent:NO];				       				       
-	}
+	void *sandyHandle = dlopen("/var/jb/usr/lib/libsandy.dylib", RTLD_LAZY);
+          if (sandyHandle) {
 
-	dlclose(handle);
+              int (*__dyn_libSandy_applyProfile)(const char *profileName) = (int (*)(const char *))dlsym(sandyHandle, "libSandy_applyProfile");
+              if (__dyn_libSandy_applyProfile) {
+                 __dyn_libSandy_applyProfile("Cr4shedTweak");
+			     __dyn_libSandy_applyProfile("libnotifications");
+				 __dyn_libSandy_applyProfile("xpcToolStrap");
+
+				  
+				// Here i used a terminal cmd because [ReportCrash] prevents any xpc connection so i had to move it to another process 
+				NSString *notifContentHex = stringToHex(notifContent);
+				NSString *notifUserInfoHex = dictToHex(notifUserInfo);
+
+				if (notifContentHex && notifUserInfoHex) {
+				NSString *command = [NSString stringWithFormat:@"/var/jb/Applications/Cr4shed.app/Cr4shed ShowNotification -notifContent %@ -notifUserInfo %@", notifContentHex, notifUserInfoHex];
+				RunCMDWithLog(command);
+				}
+              }
+		    }
+	 
 }

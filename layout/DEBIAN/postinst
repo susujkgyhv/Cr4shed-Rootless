@@ -4,6 +4,9 @@ killall -9 ReportCrash 2> /dev/null
 echo "Killing ReportMemoryException..."
 killall -9 ReportMemoryException 2> /dev/null
 echo "Starting cr4shedd..."
+ 
+echo "Signing cr4shed ++ ..."
+
 ldid -s /var/jb/usr/libexec/cr4shedd /var/jb/usr/libexec/cr4shedd
 ldid -s /var/jb/usr/libexec/cr4shedd /var/jb/Applications/Cr4shed.app/Cr4shed
 ldid -s /var/jb/usr/libexec/cr4shedd /var/jb/Library/MobileSubstrate/DynamicLibraries/0Cr4shed.dylib
@@ -11,6 +14,10 @@ ldid -s /var/jb/usr/libexec/cr4shedd /var/jb/Library/MobileSubstrate/DynamicLibr
 ldid -s /var/jb/usr/libexec/cr4shedd /var/jb/Library/MobileSubstrate/DynamicLibraries/Cr4shedMach.dylib
 ldid -s /var/jb/usr/libexec/cr4shedd /var/jb/Library/MobileSubstrate/DynamicLibraries/Cr4shedJetsam.dylib
 ldid -s /var/jb/usr/libexec/cr4shedd /var/jb/Library/Frameworks/FRPreferences.framework/FRPreferences
+
+
+echo "Setting permissions ++ ..."
+
 chown root:wheel /var/jb/usr/libexec/cr4shedd
 chmod 06777 /var/jb/usr/libexec/cr4shedd
 chown root:wheel /var/jb/Library/LaunchDaemons/com.muirey03.cr4shedd.plist

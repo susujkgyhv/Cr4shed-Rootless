@@ -1,5 +1,6 @@
 #import <Foundation/Foundation.h>
 #include <mach/mach.h>
+#import <cr4shedd.h>
 
 #define CR4ProcsNeedRefreshNotificationName @"com.muirey03.cr4shed-procsNeedRefresh"
 #define CR4BlacklistDidChangeNotificationName @"com.muirey03.cr4shed-blacklistDidChange"
@@ -7,7 +8,7 @@
 #define kProcessBlacklist @"ProcessBlacklist"
 #define kEnableJetsam @"EnableJetsam"
 
-#define CLog(fmt, ...) NSLog(@"Cr4shedLogger : " fmt, ##__VA_ARGS__)
+#define CLog(fmt, ...) NSLog(@"CM90 : " fmt, ##__VA_ARGS__)
 
 typedef NS_ENUM(NSInteger, CR4DateFormat)
 {

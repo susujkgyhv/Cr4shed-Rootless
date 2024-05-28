@@ -1,13 +1,12 @@
 @import Foundation;
 
-// #import <MRYIPCCenter.h>
+
 #import <sharedutils.h>
 #import "symbolication.h"
 #import <mach-o/dyld.h>
 #import <mach/mach.h>
 #import <dlfcn.h>
-#import <AppSupport/CPDistributedMessagingCenter.h>
-#import <rocketbootstrap/rocketbootstrap.h>
+
 
 @interface Cr4shedServer : NSObject
 + (id)sharedInstance;
@@ -15,23 +14,13 @@
 -(void)sendNotification:(NSString *)name userInfo:(NSDictionary*)userInfo;
 @end
 
+
+
+
 static NSString* writeStringToFile(NSString* str, NSString* filename)
 {
 	NSDictionary* reply;
-	if (%c(Cr4shedServer))
-	{
-		reply = [[%c(Cr4shedServer) sharedInstance] writeString:@"writeString" userInfo:@{@"string" : str, @"filename" : filename}];
-	}
-	else
-	{
-		CPDistributedMessagingCenter *c = [CPDistributedMessagingCenter centerNamed:@"com.muirey03.cr4sheddserver"];
-		if (!c || c == nil) {
-		return @"CPDistributedMessagingCenter is NULL";
-		}
-        rocketbootstrap_distributedmessagingcenter_apply(c);
-        reply = [c sendMessageAndReceiveReplyName:@"writeString" userInfo:@{@"string" : str, @"filename" : filename}]; 
-
-	}
+	reply = sendAndReceiveMessage(@{@"string" : str, @"filename" : filename}, CR4SHEDD_MESSAGE_WRITE_STRING);
 	return reply[@"path"];
 }
 
@@ -49,21 +38,9 @@ static void sendNotification(NSString* content, NSDictionary* userInfo)
 {	
 
 	
- 
-	if (%c(Cr4shedServer))
-	{
-		[[%c(Cr4shedServer) sharedInstance] sendNotification:@"sendNotification" userInfo:@{@"content" : content}];
-	}
-	else
-	{
-		
-		CPDistributedMessagingCenter *c = [CPDistributedMessagingCenter centerNamed:@"com.muirey03.cr4sheddserver"];
-		if (!c || c == nil) {
-		return ;
-		}
-        rocketbootstrap_distributedmessagingcenter_apply(c);
-        [c sendMessageName:@"sendNotification" userInfo:@{@"content" : content, @"userInfo" : userInfo}];
-	}
+	CLog(@"sendNotification Cr4shed");
+	sendAndReceiveMessage(@{@"content" : content, @"userInfo" : userInfo}, CR4SHEDD_MESSAGE_SEND_NOTIFICATION);
+
 }
 
 static unsigned long getImageVersion(uint32_t img)
@@ -285,8 +262,14 @@ inline BOOL isHardBlacklisted(NSString* procName)
 %ctor
 {	
 
-	dlopen("/var/jb/usr/lib/libnotifications.dylib", RTLD_LAZY);
-	dlopen("/var/jb/usr/lib/librocketbootstrap.dylib", RTLD_LAZY);
+	void *sandyHandle = dlopen("/var/jb/usr/lib/libsandy.dylib", RTLD_LAZY);
+          if (sandyHandle) {
+
+              int (*__dyn_libSandy_applyProfile)(const char *profileName) = (int (*)(const char *))dlsym(sandyHandle, "libSandy_applyProfile");
+              if (__dyn_libSandy_applyProfile) {
+                 __dyn_libSandy_applyProfile("Cr4shedTweak");
+              }
+		    }
 
 	@autoreleasepool
 	{
