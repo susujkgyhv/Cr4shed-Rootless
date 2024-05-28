@@ -8,7 +8,7 @@ Thanks to [@Muirey03](https://twitter.com/muirey03) for this great tweak ,
 
 
 ## Important :
-This update needs [RocketBootStrap] and [libnotifications] , both of which we've already updated ,
+This update needs [xpcToolStrap] and [libnotifications] , both of which we've already updated ,
 
 
  
@@ -16,13 +16,13 @@ This update needs [RocketBootStrap] and [libnotifications] , both of which we've
 
 - libSandy (Sileo)
 - ldid (Sileo)
-- RocketBootStrap in [Releases]
-- libnotifications : [libnotifications](https://github.com/crazymind90/libnotifications-Rootless/releases/tag/tweak)
+- xpcToolStrap : [~Releases](https://github.com/crazymind90/xpcToolStrap/releases/tag/Tweak)
+- libnotifications : [~libnotifications](https://github.com/crazymind90/libnotifications-Rootless/releases/tag/tweak)
 - Cr4shed in [Releases]
 
 
 
 ## Releases : 
-[Releases](https://github.com/crazymind90/Cr4shed-Rootless/releases/tag/tweak)
+[~Releases](https://github.com/crazymind90/Cr4shed-Rootless/releases/tag/tweak)
 
-Tested on arm64
+Tested on arm64 and arm64e | Dopamine
