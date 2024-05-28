@@ -9,8 +9,7 @@ Cr4shedJetsam_FILES = $(wildcard *.xm *.mm ../Shared/*.mm) ../cr4shedmach/mach_u
 Cr4shedJetsam_CFLAGS = -fobjc-arc -I../Include -Wno-unused-variable
 Cr4shedJetsam_LDFLAGS += -F../Frameworks/ -L../Libraries/
 Cr4shedJetsam_FRAMEWORKS = CoreSymbolication
-Cr4shedJetsam_LIBRARIES = MobileGestalt rocketbootstrap
-Cr4shedJetsam_PRIVATE_FRAMEWORKS = AppSupport
+Cr4shedJetsam_LIBRARIES = MobileGestalt
 ADDITIONAL_CFLAGS += -DTHEOS_LEAN_AND_MEAN -Wno-shorten-64-to-32
 
 include $(THEOS_MAKE_PATH)/tweak.mk

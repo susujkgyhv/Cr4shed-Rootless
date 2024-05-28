@@ -6,16 +6,13 @@
 #include <pthread.h>
 #include <time.h>
 #include <dlfcn.h>
-#import <AppSupport/CPDistributedMessagingCenter.h>
-#import <rocketbootstrap/rocketbootstrap.h>
 #import <objc/runtime.h>  
+#include <libxpcToolStrap.h>
 
+ 
+#pragma GCC diagnostic ignored "-Wunused-result"
 
-
-@interface CPDistributedMessagingCenter (Cr4shed_) 
-- (bool)doesServerExist;
-@end
-
+ 
 
 
 @interface Cr4shedServer : NSObject
@@ -28,9 +25,7 @@
 @end
 
 @implementation Cr4shedServer
-{
-	CPDistributedMessagingCenter *_messagingCenter;
-}
+ 
 
 +(void)load
 {
@@ -50,7 +45,7 @@
               int (*__dyn_libSandy_applyProfile)(const char *profileName) = (int (*)(const char *))dlsym(sandyHandle, "libSandy_applyProfile");
               if (__dyn_libSandy_applyProfile) {
                  __dyn_libSandy_applyProfile("Cr4shedTweak");
-
+				__dyn_libSandy_applyProfile("libnotifications");
               }
 		    }
 
@@ -61,30 +56,16 @@
 -(id)init
 {
 	if ((self = [super init]))
-	{
-		
-		_messagingCenter = [CPDistributedMessagingCenter centerNamed:@"com.muirey03.cr4sheddserver"];
-
-		if ([_messagingCenter doesServerExist]) {
-			return self;
-		}
-
-		rocketbootstrap_distributedmessagingcenter_apply(_messagingCenter);
-
-		[_messagingCenter runServerOnCurrentThread];
-
-		[_messagingCenter registerForMessageName:@"writeString" target:self selector:@selector(writeString:userInfo:)];
-		[_messagingCenter registerForMessageName:@"sendNotification" target:self selector:@selector(sendNotification:userInfo:)];
-		[_messagingCenter registerForMessageName:@"stringFromTime" target:self selector:@selector(stringFromTime:userInfo:)];
-		[_messagingCenter registerForMessageName:@"isProcessBlacklisted" target:self selector:@selector(isProcessBlacklisted:userInfo:)];
-		[_messagingCenter registerForMessageName:@"shouldLogJetsam" target:self selector:@selector(shouldLogJetsam)];
-
+	{	
+ 
 	}
 	return self;
 }
 
 -(NSDictionary*)writeString:(NSString *)name userInfo:(NSDictionary*)userInfo
-{
+{	
+
+	 CLog(@"-[cr4shedd]~ -[writeString:userInfo:]");
 	//get info from userInfo:
 	NSString* str = userInfo[@"string"];
 	NSString* filename = [userInfo[@"filename"] lastPathComponent];
@@ -95,7 +76,7 @@
 	if ([fullFilename pathComponents].count > 1)
 		return nil;
 	//formulate path:
-	NSString* const cr4Dir = @"/var/mobile/Library/Cr4shed";
+	NSString* const cr4Dir = @"/var/jb/var/mobile/Library/Cr4shed";
 	NSString* path = [cr4Dir stringByAppendingPathComponent:fullFilename];
 	//create cr4shed dir if neccessary:
 	//(deleting it if it is a file not a dir)
@@ -125,7 +106,7 @@
 }
 
 -(BOOL)createDirectoryAtPath:(NSString*)path
-{
+{	
 	NSDictionary<NSFileAttributeKey, id>* attributes = @{
 		NSFilePosixPermissions : @0755,
 		NSFileOwnerAccountName : @"mobile",
@@ -137,14 +118,15 @@
 
 -(void)sendNotification:(NSString *)name userInfo:(NSDictionary*)userInfo
 {
- 
+	CLog(@"-[cr4shedd]~ -[sendNotification:userInfo:]");
 	NSString* content = userInfo[@"content"];
 	NSDictionary* notifUserInfo = userInfo[@"userInfo"];
 	showCr4shedNotification(content, notifUserInfo);
 }
 
 -(NSDictionary*)stringFromTime:(NSString *)name userInfo:(NSDictionary*)userInfo
-{
+{	
+	CLog(@"-[cr4shedd]~ -[stringFromTime:userInfo:]");
 	time_t t = (time_t)[userInfo[@"time"] integerValue];
 	CR4DateFormat type = (CR4DateFormat)[userInfo[@"type"] integerValue];
 	NSDate* date = [NSDate dateWithTimeIntervalSince1970:t];
@@ -154,6 +136,7 @@
 
 -(NSDictionary *)isProcessBlacklisted:(NSString *)name userInfo:(NSDictionary*)userInfo
 {	
+	CLog(@"-[cr4shedd]~ -[isProcessBlacklisted:userInfo:]");
 	return @{@"ret" : @(isBlacklisted(userInfo[@"value"]))};
 }
 
@@ -163,11 +146,112 @@
 }
 @end
 
+
+
+
+
+
+
 int main(int argc, char** argv, char** envp)
 {
 	@autoreleasepool
 	{
 		[Cr4shedServer load];
+
+			void *sandyHandle = dlopen("/var/jb/usr/lib/libsandy.dylib", RTLD_LAZY);
+          if (sandyHandle) {
+
+              int (*__dyn_libSandy_applyProfile)(const char *profileName) = (int (*)(const char *))dlsym(sandyHandle, "libSandy_applyProfile");
+              if (__dyn_libSandy_applyProfile) {
+                  __dyn_libSandy_applyProfile("Cr4shedTweak");
+			      __dyn_libSandy_applyProfile("libnotifications");
+				  __dyn_libSandy_applyProfile("xpcToolStrap");
+              }
+		    }
+
+		xpc_connection_t service = xpc_connection_create_mach_service("com.muirey03.cr4shedd", NULL, XPC_CONNECTION_MACH_SERVICE_LISTENER);
+		if (!service) {
+
+			return 0;
+		}
+
+		
+		xpc_connection_set_event_handler(service, ^(xpc_object_t connection) {
+			xpc_type_t type = xpc_get_type(connection);
+			if (type == XPC_TYPE_CONNECTION) {
+				xpc_connection_set_event_handler(connection, ^(xpc_object_t message) {
+					if (xpc_get_type(message) == XPC_TYPE_DICTIONARY) {
+
+						int64_t idValue = xpc_dictionary_get_int64(message, "id");
+               			 CR4SHEDD_MESSAGE_ID messageId = (CR4SHEDD_MESSAGE_ID)idValue;
+						switch (messageId) {
+							case CR4SHEDD_MESSAGE_SHOULD_LOG_JETSAM: {
+								xpc_object_t reply = xpc_dictionary_create_reply(message);
+								NSDictionary *shouldLogJetsamDict = [Cr4shedServer.sharedInstance shouldLogJetsam];
+								xpc_object_t shouldLogJetsam = convertNSDictionaryToXPCDictionary(shouldLogJetsamDict);
+								xpc_dictionary_set_value(reply, "userInfo", shouldLogJetsam);
+								xpc_connection_send_message(connection, reply);
+								break;
+							}
+							case CR4SHEDD_MESSAGE_IS_PROCESS_BLACKLISTED: {
+								xpc_object_t userInfo = xpc_dictionary_get_value(message, "userInfo");
+								NSDictionary *userInfoDict = convertXPCDictionaryToNSDictionary(userInfo);
+								NSDictionary *isProcessBlacklistedDict = [Cr4shedServer.sharedInstance isProcessBlacklisted:@"" userInfo:userInfoDict];
+								xpc_object_t isProcessBlacklisted = convertNSDictionaryToXPCDictionary(isProcessBlacklistedDict);
+								xpc_object_t reply = xpc_dictionary_create_reply(message);
+								xpc_dictionary_set_value(reply, "userInfo", isProcessBlacklisted);
+								xpc_connection_send_message(connection, reply);
+								break;
+							}
+							case CR4SHEDD_MESSAGE_STRING_FROM_TIME: {
+								xpc_object_t userInfo = xpc_dictionary_get_value(message, "userInfo");
+								NSDictionary *userInfoDict = convertXPCDictionaryToNSDictionary(userInfo);
+								NSDictionary *stringFromTimeDict = [Cr4shedServer.sharedInstance stringFromTime:@"" userInfo:userInfoDict];
+								xpc_object_t stringFromTime = convertNSDictionaryToXPCDictionary(stringFromTimeDict);
+								xpc_object_t reply = xpc_dictionary_create_reply(message);
+								xpc_dictionary_set_value(reply, "userInfo", stringFromTime);
+								xpc_connection_send_message(connection, reply);
+								break;
+							}
+							case CR4SHEDD_MESSAGE_SEND_NOTIFICATION: {
+								xpc_object_t userInfo = xpc_dictionary_get_value(message, "userInfo");
+								NSDictionary *userInfoDict = convertXPCDictionaryToNSDictionary(userInfo);
+								[Cr4shedServer.sharedInstance sendNotification:@"" userInfo:userInfoDict];
+								xpc_object_t reply = xpc_dictionary_create_reply(message);
+								xpc_connection_send_message(connection, reply);
+								break;
+							}
+							case CR4SHEDD_MESSAGE_WRITE_STRING: {
+								xpc_object_t userInfo = xpc_dictionary_get_value(message, "userInfo");
+								NSDictionary *userInfoDict = convertXPCDictionaryToNSDictionary(userInfo);
+								NSDictionary *writeStringDict = [Cr4shedServer.sharedInstance writeString:@"" userInfo:userInfoDict];
+								xpc_object_t writeString = convertNSDictionaryToXPCDictionary(writeStringDict);
+								xpc_object_t reply = xpc_dictionary_create_reply(message);
+								xpc_dictionary_set_value(reply, "userInfo", writeString);
+								xpc_connection_send_message(connection, reply);
+								break;
+							}
+							case CR4SHEDD_MESSAGE_BADGE:{
+								xpc_object_t userInfo = xpc_dictionary_get_value(message, "userInfo");
+								NSDictionary *userInfoDict = convertXPCDictionaryToNSDictionary(userInfo);
+								NSDictionary *writeStringDict = [Cr4shedServer.sharedInstance writeString:@"" userInfo:userInfoDict];
+								xpc_object_t writeString = convertNSDictionaryToXPCDictionary(writeStringDict);
+								xpc_object_t reply = xpc_dictionary_create_reply(message);
+								xpc_dictionary_set_value(reply, "userInfo", writeString);
+								xpc_connection_send_message(connection, reply);
+								break;
+							}
+						}
+					}
+				});
+				xpc_connection_resume(connection);
+			} else if (type == XPC_TYPE_ERROR) {
+				CLog(@"XPC server error: %s", xpc_dictionary_get_string(connection, XPC_ERROR_KEY_DESCRIPTION));
+			}
+		});
+
+
+		xpc_connection_resume(service);
 
 		NSRunLoop* runLoop = [NSRunLoop currentRunLoop];
 		for (;;)

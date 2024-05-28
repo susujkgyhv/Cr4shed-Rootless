@@ -5,8 +5,6 @@
 #import "symbolication.h"
 #include <stdlib.h>
 #include <string.h>
-#import <AppSupport/CPDistributedMessagingCenter.h>
-#import <rocketbootstrap/rocketbootstrap.h>
 
 
 #define EXC_UNIX_BAD_SYSCALL 0x10000
@@ -284,17 +282,21 @@ void writeStringToFile(NSString* str, NSString* path)
 NSString* stringFromTime(time_t t, CR4DateFormat type)
 {
 	
+	    void *sandyHandle = dlopen("/var/jb/usr/lib/libsandy.dylib", RTLD_LAZY);
+          if (sandyHandle) {
+
+              int (*__dyn_libSandy_applyProfile)(const char *profileName) = (int (*)(const char *))dlsym(sandyHandle, "libSandy_applyProfile");
+              if (__dyn_libSandy_applyProfile) {
+                 __dyn_libSandy_applyProfile("Cr4shedTweak");
+			     __dyn_libSandy_applyProfile("libnotifications");
+				 __dyn_libSandy_applyProfile("libnotifications");
+              }
+		    }
+			
+			
 	if (!t) t = time(NULL);
-	CPDistributedMessagingCenter *c = [CPDistributedMessagingCenter centerNamed:@"com.muirey03.cr4sheddserver"];
-	if (!c || c == nil) {
 
-		return @"CPDistributedMessagingCenter is NULL";
-	}
-
-	rocketbootstrap_distributedmessagingcenter_apply(c);
-	NSDictionary* reply = [c sendMessageAndReceiveReplyName:@"stringFromTime" userInfo:@{@"time" : @(t), @"type" : @(type)}]; 
-
-
+	NSDictionary* reply = sendAndReceiveMessage(@{@"time" : @(t), @"type" : @(type)}, CR4SHEDD_MESSAGE_STRING_FROM_TIME);
 	NSString* str = reply[@"ret"];
 	
 	//fallback if cr4shedd is not available or failed for whatever reason

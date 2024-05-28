@@ -10,7 +10,20 @@
 	<true/>
 	<key>UserName</key>
 	<string>root</string>
+	<key>ProcessType</key>
+	<string>Interactive</string>
 	<key>KeepAlive</key>
+	<false/>
+	<key>MachServices</key>
+    <dict>
+	<key>com.muirey03.cr4shedd</key>
 	<true/>
+    </dict>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/var/jb/usr/libexec/cr4shedd</string>
+	</array>
 </dict>
 </plist>
+
+ 

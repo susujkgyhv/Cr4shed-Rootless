@@ -2,21 +2,14 @@
 #import <sharedutils.h>
 #import "../cr4shedmach/mach_utils.h"
 #import "cr4shed_jetsam.h"
-#import <AppSupport/CPDistributedMessagingCenter.h>
-#import <rocketbootstrap/rocketbootstrap.h>
+
 
 
 static NSString* serverWriteStringToFile(NSString* str, NSString* filename)
 {
-	CPDistributedMessagingCenter *c = [CPDistributedMessagingCenter centerNamed:@"com.muirey03.cr4sheddserver"];
-	if (!c || c == nil) {
+		
+	NSDictionary* reply = sendAndReceiveMessage(@{@"string" : str, @"filename" : filename}, CR4SHEDD_MESSAGE_WRITE_STRING);
 
-		return @"CPDistributedMessagingCenter is NULL";
-	}
-	rocketbootstrap_distributedmessagingcenter_apply(c);
-	NSDictionary* reply = [c sendMessageAndReceiveReplyName:@"writeString" userInfo:@{@"string" : str, @"filename" : filename}]; 
-
-	
 	return reply[@"path"];
 }
 
@@ -25,15 +18,18 @@ static NSString* serverWriteStringToFile(NSString* str, NSString* filename)
 {
 	BOOL ret = %orig;
 
-	CPDistributedMessagingCenter *c = [CPDistributedMessagingCenter centerNamed:@"com.muirey03.cr4sheddserver"];
-	if (!c || c == nil) {
+	void *sandyHandle = dlopen("/var/jb/usr/lib/libsandy.dylib", RTLD_LAZY);
+          if (sandyHandle) {
 
-		return NO;
-	}
-	rocketbootstrap_distributedmessagingcenter_apply(c);
+              int (*__dyn_libSandy_applyProfile)(const char *profileName) = (int (*)(const char *))dlsym(sandyHandle, "libSandy_applyProfile");
+              if (__dyn_libSandy_applyProfile) {
+                 __dyn_libSandy_applyProfile("Cr4shedTweak");
+              }
+		    }
+			
+	 CLog(@"[MemoryResourceException].[extractCorpseInfo]~");
+	NSDictionary* reply = sendAndReceiveMessage(@{}, CR4SHEDD_MESSAGE_SHOULD_LOG_JETSAM);
 
-
-	NSDictionary *reply = [c sendMessageAndReceiveReplyName:@"shouldLogJetsam" userInfo:@{}];
 	BOOL shouldLogJetsam = reply[@"ret"];
 	if (!shouldLogJetsam)
 	{
@@ -41,7 +37,7 @@ static NSString* serverWriteStringToFile(NSString* str, NSString* filename)
 	}
 	
 
-	NSDictionary *reply2 = [c sendMessageAndReceiveReplyName:@"isProcessBlacklisted" userInfo:@{@"value" : self.execName}];
+	NSDictionary* reply2 = sendAndReceiveMessage(@{@"value" : self.execName}, CR4SHEDD_MESSAGE_IS_PROCESS_BLACKLISTED);
 
 	if (!reply2[@"ret"])
 	{

@@ -9,8 +9,9 @@
 #import <sharedutils.h>
 #import "cr4shed_mach.h"
 #import "mach_utils.h"
+#import <libnotifications.h>
 
-#define CLog(fmt, ...) NSLog(@"Cr4shedLogger : " fmt, ##__VA_ARGS__)
+
 
 
 NSDictionary* getImageInfo(OSABinaryImageSegment* img)
@@ -37,7 +38,8 @@ NSDictionary* getImageInfo(OSABinaryImageSegment* img)
 -(instancetype)initWithTask:(mach_port_t)task exceptionType:(exception_type_t)exception thread:(mach_port_t)thread threadId:(NSUInteger)threadId threadStateFlavor:(int*)flavour threadState:(thread_state_t)old_state threadStateCount:(mach_msg_type_number_t)old_stateCnt
 {
 	if ((self = %orig))
-	{
+	{		 
+ 
 		[self cr4_sharedInitWithTask:task exceptionType:exception thread:thread threadStateFlavor:flavour threadState:old_state threadStateCount:old_stateCnt];
 	}
 	return self;
@@ -46,7 +48,7 @@ NSDictionary* getImageInfo(OSABinaryImageSegment* img)
 -(instancetype)initWithTask:(mach_port_t)task exceptionType:(exception_type_t)exception thread:(mach_port_t)thread threadStateFlavor:(int*)flavour threadState:(thread_state_t)old_state threadStateCount:(mach_msg_type_number_t)old_stateCnt
 {
 	if ((self = %orig))
-	{
+	{ 
 		[self cr4_sharedInitWithTask:task exceptionType:exception thread:thread threadStateFlavor:flavour threadState:old_state threadStateCount:old_stateCnt];
 	}
 	return self;
@@ -520,6 +522,7 @@ NSDictionary* getImageInfo(OSABinaryImageSegment* img)
 
 %ctor
 {
+
 	Class crashReportCls = %c(CrashReport);
 	int numClasses = objc_getClassList(NULL, 0);
 	if (numClasses)

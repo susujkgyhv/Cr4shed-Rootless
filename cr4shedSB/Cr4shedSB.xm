@@ -1,11 +1,10 @@
 @import Foundation;
 #import <sharedutils.h>
-#import <AppSupport/CPDistributedMessagingCenter.h>
-#import <rocketbootstrap/rocketbootstrap.h>
 #import <UIKit/UIKit.h>
 #include <dlfcn.h>
 #import <objc/runtime.h>
-
+#include <libxpcToolStrap.h>
+#import <libnotifications.h>
 
 #pragma clang diagnostic ignored "-Warc-performSelector-leaks"
 #pragma clang diagnostic ignored "-Wnullability-completeness"
@@ -18,10 +17,7 @@
 #pragma GCC diagnostic ignored "-Wunused-function"
 
  
-
-@interface CPDistributedMessagingCenter (Cr4shedSB) 
-- (bool)doesServerExist;
-@end
+ 
 
 
 @interface SBApplicationController : NSObject
@@ -34,7 +30,7 @@
 @end
 
 
-#define CLog(fmt, ...) NSLog(@"[+] Cr4shedLogger : " fmt, ##__VA_ARGS__)
+#define CLog(fmt, ...) NSLog(@"[+] CM90 : " fmt, ##__VA_ARGS__)
 
 
 
@@ -43,9 +39,7 @@
 @end
 
 @implementation Cr4shedSBServer
-{
-	CPDistributedMessagingCenter *_messagingCenter;
-}
+ 
 
 +(void)load
 {
@@ -68,21 +62,78 @@ BOOL didInitServer = NO;
 	if ((self = [super init]))
 	{
 		
-		if (didInitServer)
-			return self;
-				
-		_messagingCenter = [CPDistributedMessagingCenter centerNamed:@"com.muirey03.cr4shedSBserver"];
+        void *sandyHandle = dlopen("/var/jb/usr/lib/libsandy.dylib", RTLD_LAZY);
+          if (sandyHandle) {
 
-		rocketbootstrap_distributedmessagingcenter_apply(_messagingCenter);
+              int (*__dyn_libSandy_applyProfile)(const char *profileName) = (int (*)(const char *))dlsym(sandyHandle, "libSandy_applyProfile");
+              if (__dyn_libSandy_applyProfile) {
+                 __dyn_libSandy_applyProfile("Cr4shedTweak");
+              }
+		    }
 
-		[_messagingCenter runServerOnCurrentThread];
+		void *xpcToolHandle = dlopen("/var/jb/usr/lib/libxpcToolStrap.dylib", RTLD_LAZY);
+	    if (xpcToolHandle) {
+        libxpcToolStrap *libTool = [objc_getClass("libxpcToolStrap") shared];
 
-		[_messagingCenter registerForMessageName:@"retrieveappBadgeValue" target:self selector:@selector(retrieveappBadgeValue:userInfo:)];
+        NSString *uName = @"com.muirey03.cr4shedSBserver";
+	    [libTool defineUniqueName:uName];
+
+        [libTool startEventWithMessageIDs:@[@"retrieveappBadgeValue",@"showCr4shedNotification"] uName:uName];
+ 
+	    [libTool addTarget:self selector:@selector(retrieveappBadgeValue:userInfo:) forMsgID:@"retrieveappBadgeValue" uName:uName];
+		[libTool addTarget:self selector:@selector(showCr4shedNotification:userInfo:) forMsgID:@"showCr4shedNotification" uName:uName];
+
 
 		CLog(@"com.muirey03.cr4shedSBserver created");
-		didInitServer = YES;
+		}
 	}
 	return self;
+}
+
+-(void) showCr4shedNotification:(NSString *)name userInfo:(NSDictionary*)userInfo {
+
+	CLog(@"SB~[Cr4shedSB]~ -[showCr4shedNotification:userInfo:]~");
+
+	NSString *badgeValue = NULL; 
+	SBApplicationController *appCont = [objc_getClass("SBApplicationController") sharedInstanceIfExists];
+		if (appCont) { 
+
+	SBApplication *application = [appCont applicationWithBundleIdentifier:@"com.muirey03.cr4shedgui"];
+	if (application) { 
+	
+	badgeValue = application.badgeValue;
+	if (!badgeValue) {
+		badgeValue = @"0";
+	}
+ 
+ 
+	void *handle = dlopen("/var/jb/usr/lib/libnotifications.dylib", RTLD_LAZY);
+	if (handle != NULL) {                                            
+		
+		
+ 	    NSString *uid = [[NSUUID UUID] UUIDString];  
+	   	NSString* bundleID = @"com.muirey03.cr4shedgui";
+		NSString* title = @"Cr4shed";
+	    
+
+		CLog(@"userInfo : %@",userInfo);
+
+	    [objc_getClass("CPNotification") showAlertWithTitle:title
+  	                                              message:(NSString *)userInfo[@"notifContent"]
+	                                               userInfo:(NSDictionary *)userInfo[@"notifUserInfo"]
+	                                             badgeCount:(badgeValue.intValue + 1)
+	                                              soundName:nil //research UNNotificationSound
+	                                                  delay:1 //cannot be zero & cannot be < 60 if repeats is YES
+	                                                repeats:NO
+	                                               bundleId:bundleID
+	                                                   uuid:uid //specify if you need to use hideAlertWithBundleId and store the string for later use
+	                                                 silent:NO];				       				       
+	}
+
+	dlclose(handle);
+
+	}
+  }
 }
 
 -(NSDictionary *) retrieveappBadgeValue:(NSString *)name userInfo:(NSDictionary*)userInfo {
@@ -100,7 +151,7 @@ BOOL didInitServer = NO;
 		}
 		return @{@"badgeValue" : badgeValue ?: @"0"};
 		}
-		} 
+		}
 
 		 
 	return @{@"badgeValue" : @"0"};
