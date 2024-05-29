@@ -18,7 +18,7 @@ static NSString* serverWriteStringToFile(NSString* str, NSString* filename)
 {
 	BOOL ret = %orig;
 
-	void *sandyHandle = dlopen("/var/jb/usr/lib/libsandy.dylib", RTLD_LAZY);
+		void *sandyHandle = dlopen(c_rootless("/usr/lib/libsandy.dylib"), RTLD_LAZY);
           if (sandyHandle) {
 
               int (*__dyn_libSandy_applyProfile)(const char *profileName) = (int (*)(const char *))dlsym(sandyHandle, "libSandy_applyProfile");
@@ -27,23 +27,27 @@ static NSString* serverWriteStringToFile(NSString* str, NSString* filename)
               }
 		    }
 			
-	 CLog(@"[MemoryResourceException].[extractCorpseInfo]~");
+	//  CLog(@"[MemoryResourceException].[extractCorpseInfo]~");
+
 	NSDictionary* reply = sendAndReceiveMessage(@{}, CR4SHEDD_MESSAGE_SHOULD_LOG_JETSAM);
 
-	BOOL shouldLogJetsam = reply[@"ret"];
-	if (!shouldLogJetsam)
-	{
-		return ret;
-	}
-	
+    NSString *replyRet = reply[@"ret"];
+    bool shouldLogJetsam = replyRet.intValue;
+    if (!shouldLogJetsam)
+    {
+        return ret;
+    }
 
-	NSDictionary* reply2 = sendAndReceiveMessage(@{@"value" : self.execName}, CR4SHEDD_MESSAGE_IS_PROCESS_BLACKLISTED);
+    NSDictionary* reply2 = sendAndReceiveMessage(@{@"value" : self.execName}, CR4SHEDD_MESSAGE_IS_PROCESS_BLACKLISTED);
+    NSString *reply2Ret = reply2[@"ret"];
+    bool isBlacklisted = reply2Ret.intValue;
 
-	if (!reply2[@"ret"])
-	{
-		[self extractBacktraceInfo];
-		[self generateCr4shedReport];
-	}
+    if (!isBlacklisted)
+    {
+        [self extractBacktraceInfo];
+        [self generateCr4shedReport];
+    }
+	 
 	
 	return ret;
 }

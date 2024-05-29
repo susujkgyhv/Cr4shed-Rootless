@@ -62,7 +62,7 @@ BOOL didInitServer = NO;
 	if ((self = [super init]))
 	{
 		
-        void *sandyHandle = dlopen("/var/jb/usr/lib/libsandy.dylib", RTLD_LAZY);
+		void *sandyHandle = dlopen(c_rootless("/usr/lib/libsandy.dylib"), RTLD_LAZY);
           if (sandyHandle) {
 
               int (*__dyn_libSandy_applyProfile)(const char *profileName) = (int (*)(const char *))dlsym(sandyHandle, "libSandy_applyProfile");
@@ -71,20 +71,17 @@ BOOL didInitServer = NO;
               }
 		    }
 
-		void *xpcToolHandle = dlopen("/var/jb/usr/lib/libxpcToolStrap.dylib", RTLD_LAZY);
+		void *xpcToolHandle = dlopen(c_rootless("/usr/lib/libxpcToolStrap.dylib"), RTLD_LAZY);
 	    if (xpcToolHandle) {
         libxpcToolStrap *libTool = [objc_getClass("libxpcToolStrap") shared];
 
         NSString *uName = @"com.muirey03.cr4shedSBserver";
-	    [libTool defineUniqueName:uName];
-
-        [libTool startEventWithMessageIDs:@[@"retrieveappBadgeValue",@"showCr4shedNotification"] uName:uName];
- 
-	    [libTool addTarget:self selector:@selector(retrieveappBadgeValue:userInfo:) forMsgID:@"retrieveappBadgeValue" uName:uName];
+	    
+		[libTool defineUniqueName:uName];
+        [libTool startEventWithMessageIDs:@[@"showCr4shedNotification"] uName:uName];
 		[libTool addTarget:self selector:@selector(showCr4shedNotification:userInfo:) forMsgID:@"showCr4shedNotification" uName:uName];
 
 
-		CLog(@"com.muirey03.cr4shedSBserver created");
 		}
 	}
 	return self;
@@ -92,7 +89,7 @@ BOOL didInitServer = NO;
 
 -(void) showCr4shedNotification:(NSString *)name userInfo:(NSDictionary*)userInfo {
 
-	CLog(@"SB~[Cr4shedSB]~ -[showCr4shedNotification:userInfo:]~");
+	// CLog(@"SB~[Cr4shedSB]~ -[showCr4shedNotification:userInfo:]~");
 
 	NSString *badgeValue = NULL; 
 	SBApplicationController *appCont = [objc_getClass("SBApplicationController") sharedInstanceIfExists];
@@ -107,7 +104,7 @@ BOOL didInitServer = NO;
 	}
  
  
-	void *handle = dlopen("/var/jb/usr/lib/libnotifications.dylib", RTLD_LAZY);
+	void *handle = dlopen(c_rootless("/usr/lib/libnotifications.dylib"), RTLD_LAZY);
 	if (handle != NULL) {                                            
 		
 		
@@ -116,7 +113,7 @@ BOOL didInitServer = NO;
 		NSString* title = @"Cr4shed";
 	    
 
-		CLog(@"userInfo : %@",userInfo);
+		// CLog(@"userInfo : %@",userInfo);
 
 	    [objc_getClass("CPNotification") showAlertWithTitle:title
   	                                              message:(NSString *)userInfo[@"notifContent"]
@@ -135,34 +132,11 @@ BOOL didInitServer = NO;
 	}
   }
 }
-
--(NSDictionary *) retrieveappBadgeValue:(NSString *)name userInfo:(NSDictionary*)userInfo {
-
  
-		SBApplicationController *appCont = [objc_getClass("SBApplicationController") sharedInstanceIfExists];
-		if (appCont) { 
-
-		SBApplication *application = [appCont applicationWithBundleIdentifier:@"com.muirey03.cr4shedgui"];
-		if (application) { 
-		
-		NSString *badgeValue = application.badgeValue;
-		if (!badgeValue) {
-			badgeValue = @"0";
-		}
-		return @{@"badgeValue" : badgeValue ?: @"0"};
-		}
-		}
-
-		 
-	return @{@"badgeValue" : @"0"};
-  }
 
 @end 
 
 %ctor
 {
-		 
 	[Cr4shedSBServer load];
-			
-			 
 }

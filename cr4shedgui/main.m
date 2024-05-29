@@ -32,9 +32,9 @@
 
 -(void) sendMsg {
 
-	CLog(@"SharedUnitil.[sendMsg]~");
+	// CLog(@"SharedUnitil.[sendMsg]~");
 
-	void *xpcToolHandle = dlopen("/var/jb/usr/lib/libxpcToolStrap.dylib", RTLD_LAZY);
+	void *xpcToolHandle = dlopen(c_rootless("/usr/lib/libxpcToolStrap.dylib"), RTLD_LAZY);
 	if (xpcToolHandle) {
 
 	libxpcToolStrap *libTool = [objc_getClass("libxpcToolStrap") shared];
@@ -44,7 +44,7 @@
 	[libTool defineUniqueName:uName];
     [libTool postToClientWithMsgID:@"showCr4shedNotification" uName:uName userInfo:@{@"notifContent":self.notifContent,@"notifUserInfo":self.notifUserInfo}];
 
-	CLog(@"-[postToClientWithMsgID:]~showCr4shedNotification");
+	// CLog(@"-[postToClientWithMsgID:]~showCr4shedNotification");
 	}
 }
  
@@ -89,7 +89,7 @@ NSDictionary *hexToDict(NSString *hexString) {
     NSDictionary *dict = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
     
     if (!dict) {
-        NSLog(@"Error converting hex to dictionary: %@", error.localizedDescription);
+        // NSLog(@"Error converting hex to dictionary: %@", error.localizedDescription);
         return nil;
     }
 
@@ -111,7 +111,7 @@ int main(int argc, char * argv[]) {
  
 
 
-      void *sandyHandle = dlopen("/var/jb/usr/lib/libsandy.dylib", RTLD_LAZY);
+		void *sandyHandle = dlopen(c_rootless("/usr/lib/libsandy.dylib"), RTLD_LAZY);
           if (sandyHandle) {
 
               int (*__dyn_libSandy_applyProfile)(const char *profileName) = (int (*)(const char *))dlsym(sandyHandle, "libSandy_applyProfile");

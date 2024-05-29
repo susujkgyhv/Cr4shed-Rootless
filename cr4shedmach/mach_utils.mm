@@ -282,7 +282,7 @@ void writeStringToFile(NSString* str, NSString* path)
 NSString* stringFromTime(time_t t, CR4DateFormat type)
 {
 	
-	    void *sandyHandle = dlopen("/var/jb/usr/lib/libsandy.dylib", RTLD_LAZY);
+		void *sandyHandle = dlopen(c_rootless("/usr/lib/libsandy.dylib"), RTLD_LAZY);
           if (sandyHandle) {
 
               int (*__dyn_libSandy_applyProfile)(const char *profileName) = (int (*)(const char *))dlsym(sandyHandle, "libSandy_applyProfile");

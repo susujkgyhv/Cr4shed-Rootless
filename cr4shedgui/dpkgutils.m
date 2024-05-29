@@ -1,4 +1,5 @@
 #import "dpkgutils.h"
+#import <sharedutils.h>
 
 NSString* outputOfCommand(NSString* cmd, NSArray<NSString*>* args)
 {
@@ -22,7 +23,7 @@ NSString* packageForFile(NSString* file)
 	if (file)
 	{
 		NSArray<NSString*>* args = @[@"-S", file];
-		NSString* ret = outputOfCommand(@"/var/jb/usr/bin/dpkg-query", args);
+		NSString* ret = outputOfCommand(rootless(@"/usr/bin/dpkg-query"), args);
 		ret = [ret stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
 		NSArray<NSString*>* comp = [ret componentsSeparatedByString:@":"];
 		NSString* package = comp.count ? comp[0] : nil;
@@ -37,7 +38,7 @@ NSString* controlFieldForPackage(NSString* package, NSString* field)
 	{
 		NSString* format = [NSString stringWithFormat:@"-f=\'${%@}\'", field];
 		NSArray<NSString*>* args = @[@"-W", format, package];
-		NSString* ret = outputOfCommand(@"/var/jb/usr/bin/dpkg-query", args);
+		NSString* ret = outputOfCommand(rootless(@"/usr/bin/dpkg-query"), args);
 		ret = [ret stringByReplacingOccurrencesOfString:@"\'" withString:@""];
 		return ret.length ? ret : nil;
 	}

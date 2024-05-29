@@ -8,6 +8,7 @@
 #include <dlfcn.h>
 #import <objc/runtime.h>  
 #include <libxpcToolStrap.h>
+#import <Cephei/HBPreferences.h>
 
  
 #pragma GCC diagnostic ignored "-Wunused-result"
@@ -39,7 +40,7 @@
 	dispatch_once(&once, ^{
 		sharedInstance = [[self alloc] init];
 
-		void *sandyHandle = dlopen("/var/jb/usr/lib/libsandy.dylib", RTLD_LAZY);
+		void *sandyHandle = dlopen(c_rootless("/usr/lib/libsandy.dylib"), RTLD_LAZY);
           if (sandyHandle) {
 
               int (*__dyn_libSandy_applyProfile)(const char *profileName) = (int (*)(const char *))dlsym(sandyHandle, "libSandy_applyProfile");
@@ -65,7 +66,7 @@
 -(NSDictionary*)writeString:(NSString *)name userInfo:(NSDictionary*)userInfo
 {	
 
-	 CLog(@"-[cr4shedd]~ -[writeString:userInfo:]");
+	 // CLog(@"-[cr4shedd]~ -[writeString:userInfo:]");
 	//get info from userInfo:
 	NSString* str = userInfo[@"string"];
 	NSString* filename = [userInfo[@"filename"] lastPathComponent];
@@ -76,7 +77,7 @@
 	if ([fullFilename pathComponents].count > 1)
 		return nil;
 	//formulate path:
-	NSString* const cr4Dir = @"/var/jb/var/mobile/Library/Cr4shed";
+	NSString* const cr4Dir = rootless(@"/var/mobile/Library/Cr4shed");
 	NSString* path = [cr4Dir stringByAppendingPathComponent:fullFilename];
 	//create cr4shed dir if neccessary:
 	//(deleting it if it is a file not a dir)
@@ -118,7 +119,7 @@
 
 -(void)sendNotification:(NSString *)name userInfo:(NSDictionary*)userInfo
 {
-	CLog(@"-[cr4shedd]~ -[sendNotification:userInfo:]");
+	// CLog(@"-[cr4shedd]~ -[sendNotification:userInfo:]");
 	NSString* content = userInfo[@"content"];
 	NSDictionary* notifUserInfo = userInfo[@"userInfo"];
 	showCr4shedNotification(content, notifUserInfo);
@@ -126,7 +127,7 @@
 
 -(NSDictionary*)stringFromTime:(NSString *)name userInfo:(NSDictionary*)userInfo
 {	
-	CLog(@"-[cr4shedd]~ -[stringFromTime:userInfo:]");
+	// CLog(@"-[cr4shedd]~ -[stringFromTime:userInfo:]");
 	time_t t = (time_t)[userInfo[@"time"] integerValue];
 	CR4DateFormat type = (CR4DateFormat)[userInfo[@"type"] integerValue];
 	NSDate* date = [NSDate dateWithTimeIntervalSince1970:t];
@@ -135,15 +136,19 @@
 }
 
 -(NSDictionary *)isProcessBlacklisted:(NSString *)name userInfo:(NSDictionary*)userInfo
-{	
-	CLog(@"-[cr4shedd]~ -[isProcessBlacklisted:userInfo:]");
-	return @{@"ret" : @(isBlacklisted(userInfo[@"value"]))};
+{    
+    HBPreferences* prefs = sharedPreferences();
+    NSArray<NSString*>* blacklist = [prefs objectForKey:kProcessBlacklist];
+    return @{@"ret" : @((blacklist && [blacklist containsObject:userInfo[@"value"]]))};
 }
 
 -(NSDictionary *) shouldLogJetsam {
 
-	return @{@"ret" : @(wantsLogJetsam())};
+    HBPreferences* prefs = sharedPreferences();
+    bool shouldLogJetsam = [prefs objectForKey:kEnableJetsam];
+    return @{@"ret" : @(shouldLogJetsam)};
 }
+
 @end
 
 
@@ -158,7 +163,7 @@ int main(int argc, char** argv, char** envp)
 	{
 		[Cr4shedServer load];
 
-			void *sandyHandle = dlopen("/var/jb/usr/lib/libsandy.dylib", RTLD_LAZY);
+		void *sandyHandle = dlopen(c_rootless("/usr/lib/libsandy.dylib"), RTLD_LAZY);
           if (sandyHandle) {
 
               int (*__dyn_libSandy_applyProfile)(const char *profileName) = (int (*)(const char *))dlsym(sandyHandle, "libSandy_applyProfile");
@@ -231,31 +236,20 @@ int main(int argc, char** argv, char** envp)
 								xpc_connection_send_message(connection, reply);
 								break;
 							}
-							case CR4SHEDD_MESSAGE_BADGE:{
-								xpc_object_t userInfo = xpc_dictionary_get_value(message, "userInfo");
-								NSDictionary *userInfoDict = convertXPCDictionaryToNSDictionary(userInfo);
-								NSDictionary *writeStringDict = [Cr4shedServer.sharedInstance writeString:@"" userInfo:userInfoDict];
-								xpc_object_t writeString = convertNSDictionaryToXPCDictionary(writeStringDict);
-								xpc_object_t reply = xpc_dictionary_create_reply(message);
-								xpc_dictionary_set_value(reply, "userInfo", writeString);
-								xpc_connection_send_message(connection, reply);
-								break;
-							}
 						}
 					}
 				});
 				xpc_connection_resume(connection);
 			} else if (type == XPC_TYPE_ERROR) {
-				CLog(@"XPC server error: %s", xpc_dictionary_get_string(connection, XPC_ERROR_KEY_DESCRIPTION));
+				// CLog(@"XPC server error: %s", xpc_dictionary_get_string(connection, XPC_ERROR_KEY_DESCRIPTION));
 			}
 		});
 
 
 		xpc_connection_resume(service);
 
-		NSRunLoop* runLoop = [NSRunLoop currentRunLoop];
-		for (;;)
-			[runLoop run];
+		 [[NSRunLoop currentRunLoop] run];
+
 		return 0;
 	}
 }

@@ -27,7 +27,7 @@
 {
 	_processes = [NSMutableArray new];
 	//loop through all logs
-	NSString* const logsDirectory = @"/var/jb/var/mobile/Library/Cr4shed";
+	NSString* const logsDirectory = rootless(@"/var/mobile/Library/Cr4shed");
 	NSMutableArray* files = [[[NSFileManager defaultManager] contentsOfDirectoryAtPath:logsDirectory error:nil] mutableCopy];
 	for (int i = 0; i < files.count; i++)
 	{

@@ -458,18 +458,18 @@ NSDictionary* getImageInfo(OSABinaryImageSegment* img)
 
 		// Create the dir if it doesn't exist already:
 		BOOL isDir;
-		BOOL dirExists = [[NSFileManager defaultManager] fileExistsAtPath:@"/var/jb/var/mobile/Library/Cr4shed" isDirectory:&isDir];
+		BOOL dirExists = [[NSFileManager defaultManager] fileExistsAtPath:rootless(@"/var/mobile/Library/Cr4shed") isDirectory:&isDir];
 		if (!dirExists)
-			dirExists = createDir(@"/var/jb/var/mobile/Library/Cr4shed");
+			dirExists = createDir(rootless(@"/var/mobile/Library/Cr4shed"));
 		if (!dirExists) return; //should never happen, but just in case
 
 		// Get the date to use for the filename:
 		NSString* filenameDateStr = stringFromTime(crashTime, CR4DateFormatFilename);
 
 		// Get the path for the new crash log:
-		NSString* path = [NSString stringWithFormat:@"/var/jb/var/mobile/Library/Cr4shed/%@@%@.log", info->processName, filenameDateStr];
+		NSString* path = [NSString stringWithFormat:@"%@/%@@%@.log",rootless(@"/var/mobile/Library/Cr4shed"), info->processName, filenameDateStr];
 		for (unsigned i = 1; [[NSFileManager defaultManager] fileExistsAtPath:path]; i++)
-			path = [NSString stringWithFormat:@"/var/jb/var/mobile/Library/Cr4shed/%@@%@ (%d).log", info->processName, filenameDateStr, i];
+			path = [NSString stringWithFormat:@"%@/%@@%@ (%d).log",rootless(@"/var/mobile/Library/Cr4shed"), info->processName, filenameDateStr, i];
 
 		// Create the crash log
 		writeStringToFile(logStr, path);
