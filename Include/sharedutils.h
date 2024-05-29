@@ -49,3 +49,26 @@ void showCr4shedNotification(NSString* notifContent, NSDictionary* notifUserInfo
 #endif
 
  
+
+
+
+static BOOL isRootHide(void) {
+	if(access("/var/jb", F_OK) == 0) return NO;
+	return YES;
+}
+
+static NSString *rootless(NSString *path) {
+	if (isRootHide()) {
+		return path;
+	} else {
+		return [NSString stringWithFormat:@"/var/jb%@",path];
+	}
+}
+
+static const char *c_rootless(const char *path) {
+	if (isRootHide()) {
+		return [NSString stringWithFormat:@"%s",path].UTF8String;
+	} else {
+		return [NSString stringWithFormat:@"/var/jb%s",path].UTF8String;
+	}
+}

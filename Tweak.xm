@@ -36,11 +36,7 @@ static NSString* getCallStack(NSException* e)
 
 static void sendNotification(NSString* content, NSDictionary* userInfo)
 {	
-
-	
-	CLog(@"sendNotification Cr4shed");
 	sendAndReceiveMessage(@{@"content" : content, @"userInfo" : userInfo}, CR4SHEDD_MESSAGE_SEND_NOTIFICATION);
-
 }
 
 static unsigned long getImageVersion(uint32_t img)
@@ -261,23 +257,19 @@ inline BOOL isHardBlacklisted(NSString* procName)
 
 %ctor
 {	
-
-	void *sandyHandle = dlopen("/var/jb/usr/lib/libsandy.dylib", RTLD_LAZY);
-          if (sandyHandle) {
-
-              int (*__dyn_libSandy_applyProfile)(const char *profileName) = (int (*)(const char *))dlsym(sandyHandle, "libSandy_applyProfile");
-              if (__dyn_libSandy_applyProfile) {
-                 __dyn_libSandy_applyProfile("Cr4shedTweak");
-              }
-		    }
-
+	
+ 
 	@autoreleasepool
 	{
+		dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
 		if (!isHardBlacklisted([[NSProcessInfo processInfo] processName]))
 		{
 			oldHandler = NSGetUncaughtExceptionHandler();
 			NSSetUncaughtExceptionHandler(&unhandledExceptionHandler);
 			%init(Tweak);
 		}
+	  });
 	}
 }
+
+ 

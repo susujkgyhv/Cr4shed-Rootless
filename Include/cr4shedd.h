@@ -22,7 +22,6 @@ typedef enum {
 	CR4SHEDD_MESSAGE_STRING_FROM_TIME,
 	CR4SHEDD_MESSAGE_SEND_NOTIFICATION,
 	CR4SHEDD_MESSAGE_WRITE_STRING,
-	CR4SHEDD_MESSAGE_BADGE,
 } CR4SHEDD_MESSAGE_ID;
 
 
@@ -32,7 +31,7 @@ static NSDictionary *convertXPCDictionaryToNSDictionary(xpc_object_t xpcDict) {
     xpc_dictionary_apply(xpcDict, ^bool(const char *key, xpc_object_t value) {
         @try {
             if (key == NULL || value == NULL) {
-                CLogLib(@"Skipping null key or value");
+                // CLogLib(@"Skipping null key or value");
                 return true;
             }
 
@@ -52,16 +51,16 @@ static NSDictionary *convertXPCDictionaryToNSDictionary(xpc_object_t xpcDict) {
             } else if (valueType == XPC_TYPE_DICTIONARY) {
                 nsValue = convertXPCDictionaryToNSDictionary(value);
             } else {
-                CLogLib(@"Unsupported XPC type");
+                // CLogLib(@"Unsupported XPC type");
             }
 
             if (nsValue) {
                 dict[nsKey] = nsValue;
             } else {
-                CLogLib(@"Null nsValue for key: %@", nsKey);
+                // CLogLib(@"Null nsValue for key: %@", nsKey);
             }
         } @catch (NSException *exception) {
-            CLogLib(@"Exception converting key %s: %@", key, exception);
+            // CLogLib(@"Exception converting key %s: %@", key, exception);
         }
 
         return true;
@@ -74,7 +73,7 @@ static xpc_object_t convertNSDictionaryToXPCDictionary(NSDictionary *dict) {
     
     [dict enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
         if (![key isKindOfClass:[NSString class]]) {
-            CLogLib(@"Skipping non-string key: %@", key);
+            // CLogLib(@"Skipping non-string key: %@", key);
             return;
         }
 
@@ -97,14 +96,14 @@ static xpc_object_t convertNSDictionaryToXPCDictionary(NSDictionary *dict) {
                        strcmp(objCType, @encode(double)) == 0) {
                 xpc_dictionary_set_double(xpcDict, cKey, [obj doubleValue]);
             } else {
-                CLogLib(@"Unsupported NSNumber type for key: %@", key);
+                // CLogLib(@"Unsupported NSNumber type for key: %@", key);
             }
         } else if ([obj isKindOfClass:[NSDictionary class]]) {
             xpc_object_t nestedDict = convertNSDictionaryToXPCDictionary((NSDictionary *)obj);
             xpc_dictionary_set_value(xpcDict, cKey, nestedDict);
 
         } else {
-            CLogLib(@"Unsupported type for key: %@", key);
+            // CLogLib(@"Unsupported type for key: %@", key);
         }
     }];
     
@@ -129,9 +128,9 @@ static xpc_object_t cr4sheddSendMessage(xpc_object_t message)
         xpc_type_t type = xpc_get_type(connection);
         if (type == XPC_TYPE_CONNECTION) { 
 
-            CLog(@"[++] connected to com.muirey03.cr4shedd daemon");
+            // // CLog(@"[++] connected to com.muirey03.cr4shedd daemon");
         } else if (type == XPC_TYPE_ERROR) {
-				CLog(@"[--] XPC server error: %s", xpc_dictionary_get_string(connection, XPC_ERROR_KEY_DESCRIPTION));
+				// CLog(@"[--] XPC server error: %s", xpc_dictionary_get_string(connection, XPC_ERROR_KEY_DESCRIPTION));
 			}
     });
 	xpc_connection_resume(connection);

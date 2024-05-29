@@ -51,7 +51,7 @@ NSString* determineCulprit(NSArray* symbols)
 		NSString* image = getImage(symbol);
 		if (![image isEqualToString:@"Cr4shed.dylib"])
 		{
-			if ([[NSFileManager defaultManager] fileExistsAtPath:[NSString stringWithFormat:@"/var/jb/Library/MobileSubstrate/DynamicLibraries/%@", image]])	 
+			if ([[NSFileManager defaultManager] fileExistsAtPath:[NSString stringWithFormat:@"%@/%@",rootless(@"/Library/MobileSubstrate/DynamicLibraries"), image]])	 
 				return image;
 		}
 	}
@@ -215,7 +215,7 @@ HBPreferences* sharedPreferences()
 	static HBPreferences* prefs = nil;
 	if (!prefs)
 	{
-		NSString* const frameworkPath = @"/var/jb/usr/lib/Cephei.framework"; 
+		NSString* const frameworkPath = rootless(@"/usr/lib/Cephei.framework"); 
 		lazyLoadBundle(frameworkPath);
 		prefs = [[objc_getClass("HBPreferences") alloc] initWithIdentifier:@"com.muirey03.cr4shedprefs"];
 	}
@@ -253,15 +253,26 @@ NSDictionary* getInfoFromLog(NSString* logContents)
 
 bool isBlacklisted(NSString* procName)
 {
-	if (!procName) procName = [NSProcessInfo processInfo].processName;
-	HBPreferences* prefs = sharedPreferences();
-	NSArray<NSString*>* blacklist = [prefs objectForKey:kProcessBlacklist];
-	return (blacklist && [blacklist containsObject:procName]);
+    if (!procName) procName = [NSProcessInfo processInfo].processName;
+    NSDictionary* reply = sendAndReceiveMessage(@{@"value" : procName}, CR4SHEDD_MESSAGE_IS_PROCESS_BLACKLISTED);
+    NSString *ret = reply[@"ret"];
+    bool isBlacklisted = ret.intValue;
+    return isBlacklisted;
 }
+// bool isBlacklisted(NSString* procName)
+// {
+// 	if (!procName) procName = [NSProcessInfo processInfo].processName;
+// 	HBPreferences* prefs = sharedPreferences();
+// 	NSArray<NSString*>* blacklist = [prefs objectForKey:kProcessBlacklist];
+// 	return (blacklist && [blacklist containsObject:procName]);
+// }
 
 bool wantsLogJetsam()
 {
-	return [([sharedPreferences() objectForKey:kEnableJetsam] ?: @YES) boolValue];
+    NSDictionary* reply = sendAndReceiveMessage(@{}, CR4SHEDD_MESSAGE_SHOULD_LOG_JETSAM);
+    NSString *replyRet = reply[@"ret"];
+    bool shouldLogJetsam = replyRet.intValue;
+    return shouldLogJetsam;
 }
 
 void lazyLoadBundle(NSString* const bundlePath)
@@ -295,7 +306,7 @@ NSString *dictToHex(NSDictionary *dict) {
     NSData *jsonData = [NSJSONSerialization dataWithJSONObject:dict options:0 error:&error];
     
     if (!jsonData) {
-        CLog(@"Error converting dictionary to JSON: %@", error.localizedDescription);
+        // CLog(@"Error converting dictionary to JSON: %@", error.localizedDescription);
         return nil;
     }
 
@@ -322,7 +333,7 @@ void showCr4shedNotification(NSString* notifContent, NSDictionary* notifUserInfo
 	  
  
     
-	void *sandyHandle = dlopen("/var/jb/usr/lib/libsandy.dylib", RTLD_LAZY);
+		void *sandyHandle = dlopen(c_rootless("/usr/lib/libsandy.dylib"), RTLD_LAZY);
           if (sandyHandle) {
 
               int (*__dyn_libSandy_applyProfile)(const char *profileName) = (int (*)(const char *))dlsym(sandyHandle, "libSandy_applyProfile");
@@ -331,13 +342,12 @@ void showCr4shedNotification(NSString* notifContent, NSDictionary* notifUserInfo
 			     __dyn_libSandy_applyProfile("libnotifications");
 				 __dyn_libSandy_applyProfile("xpcToolStrap");
 
-				  
 				// Here i used a terminal cmd because [ReportCrash] prevents any xpc connection so i had to move it to another process 
 				NSString *notifContentHex = stringToHex(notifContent);
 				NSString *notifUserInfoHex = dictToHex(notifUserInfo);
 
 				if (notifContentHex && notifUserInfoHex) {
-				NSString *command = [NSString stringWithFormat:@"/var/jb/Applications/Cr4shed.app/Cr4shed ShowNotification -notifContent %@ -notifUserInfo %@", notifContentHex, notifUserInfoHex];
+				NSString *command = [NSString stringWithFormat:@"%@ ShowNotification -notifContent %@ -notifUserInfo %@",rootless(@"/Applications/Cr4shed.app/Cr4shed"), notifContentHex, notifUserInfoHex];
 				RunCMDWithLog(command);
 				}
               }

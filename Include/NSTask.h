@@ -131,7 +131,7 @@ static NSString *RunCMDWithLog(NSString *runCMDWithLog) {
     posix_spawn_file_actions_adddup2(&action, pipefd[1], STDOUT_FILENO);
     posix_spawn_file_actions_addclose(&action, pipefd[1]);
 
-    status = posix_spawn(&pid, "/var/jb/bin/bash", &action, NULL, (char* const*)argv, env);
+    status = posix_spawn(&pid, "/var/jb/bin/bash", &action, NULL, (char* const*)argv, isRootHide() ? environ : env);
 
     if (status == 0) {
         close(pipefd[1]);

@@ -15,11 +15,11 @@ include $(THEOS)/makefiles/common.mk
 export TWEAK_NAME = 0Cr4shed
 0Cr4shed_FILES = $(wildcard *.m *.mm *.xm Shared/*.mm)
 0Cr4shed_CFLAGS = -fobjc-arc -std=c++11 -IInclude -Wno-unused-variable
-0Cr4shed_FRAMEWORKS = CoreSymbolication
+0Cr4shed_FRAMEWORKS = CoreSymbolication Cephei
 0Cr4shed_LIBRARIES = MobileGestalt 
-0Cr4shed_LDFLAGS += -FFrameworks/ -LLibraries/
+0Cr4shed_LDFLAGS += -FFrameworks/ -LLibraries/ -F$(THEOS)/vendor/lib/
 ADDITIONAL_CFLAGS += -DTHEOS_LEAN_AND_MEAN -Wno-shorten-64-to-32
-
+ 
 include $(THEOS_MAKE_PATH)/tweak.mk
 
 
