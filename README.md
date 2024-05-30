@@ -16,13 +16,12 @@ This update needs [xpcToolStrap] and [libnotifications] , both of which we've al
 
 - libSandy (Sileo)
 - ldid (Sileo)
-- xpcToolStrap : [~Releases](https://github.com/crazymind90/xpcToolStrap/releases/tag/Tweak)
-- libnotifications : [~libnotifications](https://github.com/crazymind90/libnotifications-Rootless/releases/tag/tweak)
+- xpcToolStrap : [~Releases](https://github.com/crazymind90/xpcToolStrap/releases)
+- libnotifications : [~libnotifications](https://github.com/crazymind90/libnotifications-Rootless/releases/)
 - Cr4shed in [Releases]
 
 
-
 ## Releases : 
-[~Releases](https://github.com/crazymind90/Cr4shed-Rootless/releases/tag/tweak)
+[~Releases](https://github.com/crazymind90/Cr4shed-Rootless/releases/)
 
 Tested on arm64 and arm64e | Dopamine
