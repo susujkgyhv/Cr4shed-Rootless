@@ -14,7 +14,6 @@ This update needs [xpcToolStrap] and [libnotifications] , both of which we've al
  
 #### Installation Steps (in order) : 
 
-- libSandy (Sileo)
 - ldid (Sileo)
 - CrossOverIPC : [~Releases](https://github.com/crazymind90/CrossOverIPC/releases/tag/Tweak)
 - libnotifications : [~libnotifications](https://github.com/crazymind90/libnotifications-Rootless/releases/tag/tweak)
