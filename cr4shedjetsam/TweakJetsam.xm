@@ -7,9 +7,11 @@
 
 static NSString* serverWriteStringToFile(NSString* str, NSString* filename)
 {
-		
-	NSDictionary* reply = sendAndReceiveMessage(@{@"string" : str, @"filename" : filename}, CR4SHEDD_MESSAGE_WRITE_STRING);
 
+	#define _serviceName @"com.muirey03.cr4shedd"
+    CrossOverIPC *crossOver = [objc_getClass("CrossOverIPC") centerNamed:_serviceName type:SERVICE_TYPE_SENDER];
+    NSDictionary* reply = [crossOver sendMessageAndReceiveReplyName:@"writeString" userInfo:@{@"string" : str, @"filename" : filename}];
+ 
 	return reply[@"path"];
 }
 
@@ -18,18 +20,12 @@ static NSString* serverWriteStringToFile(NSString* str, NSString* filename)
 {
 	BOOL ret = %orig;
 
-		void *sandyHandle = dlopen(c_rootless("/usr/lib/libsandy.dylib"), RTLD_LAZY);
-          if (sandyHandle) {
+  
 
-              int (*__dyn_libSandy_applyProfile)(const char *profileName) = (int (*)(const char *))dlsym(sandyHandle, "libSandy_applyProfile");
-              if (__dyn_libSandy_applyProfile) {
-                 __dyn_libSandy_applyProfile("Cr4shedTweak");
-              }
-		    }
-			
-	//  CLog(@"[MemoryResourceException].[extractCorpseInfo]~");
+	#define _serviceName @"com.muirey03.cr4shedd"
+    CrossOverIPC *crossOver = [objc_getClass("CrossOverIPC") centerNamed:_serviceName type:SERVICE_TYPE_SENDER];
 
-	NSDictionary* reply = sendAndReceiveMessage(@{}, CR4SHEDD_MESSAGE_SHOULD_LOG_JETSAM);
+    NSDictionary* reply = [crossOver sendMessageAndReceiveReplyName:@"shouldLogJetsam" userInfo:@{}];
 
     NSString *replyRet = reply[@"ret"];
     bool shouldLogJetsam = replyRet.intValue;
@@ -38,7 +34,7 @@ static NSString* serverWriteStringToFile(NSString* str, NSString* filename)
         return ret;
     }
 
-    NSDictionary* reply2 = sendAndReceiveMessage(@{@"value" : self.execName}, CR4SHEDD_MESSAGE_IS_PROCESS_BLACKLISTED);
+	NSDictionary* reply2 = [crossOver sendMessageAndReceiveReplyName:@"isProcessBlacklisted" userInfo:@{@"value" : self.execName}];
     NSString *reply2Ret = reply2[@"ret"];
     bool isBlacklisted = reply2Ret.intValue;
 

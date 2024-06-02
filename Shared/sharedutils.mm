@@ -10,7 +10,6 @@
 #import <Cephei/HBPreferences.h>
 #import <libnotifications.h>
 #include <dlfcn.h>
-#include <libxpcToolStrap.h>
 
 
 
@@ -215,7 +214,7 @@ HBPreferences* sharedPreferences()
 	static HBPreferences* prefs = nil;
 	if (!prefs)
 	{
-		NSString* const frameworkPath = rootless(@"/usr/lib/Cephei.framework"); 
+		NSString* const frameworkPath = rootless(@"/var/jb/usr/lib/Cephei.framework"); 
 		lazyLoadBundle(frameworkPath);
 		prefs = [[objc_getClass("HBPreferences") alloc] initWithIdentifier:@"com.muirey03.cr4shedprefs"];
 	}
@@ -253,23 +252,23 @@ NSDictionary* getInfoFromLog(NSString* logContents)
 
 bool isBlacklisted(NSString* procName)
 {
+ 	
+    CrossOverIPC *crossOver = [objc_getClass("CrossOverIPC") centerNamed:@"com.muirey03.cr4shedd" type:SERVICE_TYPE_SENDER];
+    
     if (!procName) procName = [NSProcessInfo processInfo].processName;
-    NSDictionary* reply = sendAndReceiveMessage(@{@"value" : procName}, CR4SHEDD_MESSAGE_IS_PROCESS_BLACKLISTED);
+	NSDictionary *reply = [crossOver sendMessageAndReceiveReplyName:@"isProcessBlacklisted" userInfo:@{@"value" : procName}];
     NSString *ret = reply[@"ret"];
     bool isBlacklisted = ret.intValue;
     return isBlacklisted;
 }
-// bool isBlacklisted(NSString* procName)
-// {
-// 	if (!procName) procName = [NSProcessInfo processInfo].processName;
-// 	HBPreferences* prefs = sharedPreferences();
-// 	NSArray<NSString*>* blacklist = [prefs objectForKey:kProcessBlacklist];
-// 	return (blacklist && [blacklist containsObject:procName]);
-// }
+
 
 bool wantsLogJetsam()
 {
-    NSDictionary* reply = sendAndReceiveMessage(@{}, CR4SHEDD_MESSAGE_SHOULD_LOG_JETSAM);
+ 
+    CrossOverIPC *crossOver = [objc_getClass("CrossOverIPC") centerNamed:@"com.muirey03.cr4shedd" type:SERVICE_TYPE_SENDER];
+
+	NSDictionary *reply = [crossOver sendMessageAndReceiveReplyName:@"shouldLogJetsam" userInfo:@{}];
     NSString *replyRet = reply[@"ret"];
     bool shouldLogJetsam = replyRet.intValue;
     return shouldLogJetsam;
@@ -282,75 +281,12 @@ void lazyLoadBundle(NSString* const bundlePath)
 		[bundle load];
 }
  
+ 
 
-NSString *stringToHex(NSString *string) {
-    NSData *data = [string dataUsingEncoding:NSUTF8StringEncoding];
-    const unsigned char *dataBuffer = (const unsigned char *)[data bytes];
-
-    if (!dataBuffer) {
-        return [NSString string];
-    }
-
-    NSUInteger dataLength = [data length];
-    NSMutableString *hexString = [NSMutableString stringWithCapacity:(dataLength * 2)];
-    
-    for (int i = 0; i < dataLength; ++i) {
-        [hexString appendString:[NSString stringWithFormat:@"%02x", dataBuffer[i]]];
-    }
-
-    return [NSString stringWithString:hexString];
-}
-
-NSString *dictToHex(NSDictionary *dict) {
-    NSError *error;
-    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:dict options:0 error:&error];
-    
-    if (!jsonData) {
-        // CLog(@"Error converting dictionary to JSON: %@", error.localizedDescription);
-        return nil;
-    }
-
-    const unsigned char *dataBuffer = (const unsigned char *)[jsonData bytes];
-
-    if (!dataBuffer) {
-        return [NSString string];
-    }
-
-    NSUInteger dataLength = [jsonData length];
-    NSMutableString *hexString = [NSMutableString stringWithCapacity:(dataLength * 2)];
-    
-    for (int i = 0; i < dataLength; ++i) {
-        [hexString appendString:[NSString stringWithFormat:@"%02x", dataBuffer[i]]];
-    }
-
-    return [NSString stringWithString:hexString];
-}
-
-
-#include <NSTask.h>
 void showCr4shedNotification(NSString* notifContent, NSDictionary* notifUserInfo)
 {
-	  
+		#define _serviceName @"com.muirey03.cr4shedSBserver"
  
-    
-		void *sandyHandle = dlopen(c_rootless("/usr/lib/libsandy.dylib"), RTLD_LAZY);
-          if (sandyHandle) {
-
-              int (*__dyn_libSandy_applyProfile)(const char *profileName) = (int (*)(const char *))dlsym(sandyHandle, "libSandy_applyProfile");
-              if (__dyn_libSandy_applyProfile) {
-                 __dyn_libSandy_applyProfile("Cr4shedTweak");
-			     __dyn_libSandy_applyProfile("libnotifications");
-				 __dyn_libSandy_applyProfile("xpcToolStrap");
-
-				// Here i used a terminal cmd because [ReportCrash] prevents any xpc connection so i had to move it to another process 
-				NSString *notifContentHex = stringToHex(notifContent);
-				NSString *notifUserInfoHex = dictToHex(notifUserInfo);
-
-				if (notifContentHex && notifUserInfoHex) {
-				NSString *command = [NSString stringWithFormat:@"%@ ShowNotification -notifContent %@ -notifUserInfo %@",rootless(@"/Applications/Cr4shed.app/Cr4shed"), notifContentHex, notifUserInfoHex];
-				RunCMDWithLog(command);
-				}
-              }
-		    }
-	 
+    	CrossOverIPC *crossOver = [objc_getClass("CrossOverIPC") centerNamed:_serviceName type:SERVICE_TYPE_SENDER];
+ 		[crossOver sendMessageName:@"showCr4shedNotification" userInfo:@{@"notifContent":notifContent,@"notifUserInfo":notifUserInfo}];
 }

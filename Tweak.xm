@@ -18,9 +18,14 @@
 
 
 static NSString* writeStringToFile(NSString* str, NSString* filename)
-{
-	NSDictionary* reply;
-	reply = sendAndReceiveMessage(@{@"string" : str, @"filename" : filename}, CR4SHEDD_MESSAGE_WRITE_STRING);
+{	
+
+	#define _serviceName @"com.muirey03.cr4shedd"
+
+    CrossOverIPC *crossOver = [objc_getClass("CrossOverIPC") centerNamed:_serviceName type:SERVICE_TYPE_SENDER];
+
+    NSDictionary* reply = [crossOver sendMessageAndReceiveReplyName:@"writeString" userInfo:@{@"string" : str, @"filename" : filename}];
+
 	return reply[@"path"];
 }
 
@@ -36,7 +41,10 @@ static NSString* getCallStack(NSException* e)
 
 static void sendNotification(NSString* content, NSDictionary* userInfo)
 {	
-	sendAndReceiveMessage(@{@"content" : content, @"userInfo" : userInfo}, CR4SHEDD_MESSAGE_SEND_NOTIFICATION);
+	#define _serviceName @"com.muirey03.cr4shedd"
+	
+     CrossOverIPC *crossOver = [objc_getClass("CrossOverIPC") centerNamed:_serviceName type:SERVICE_TYPE_SENDER];
+    [crossOver sendMessageName:@"sendNotification" userInfo:@{@"content" : content, @"userInfo" : userInfo}];
 }
 
 static unsigned long getImageVersion(uint32_t img)
@@ -261,14 +269,12 @@ inline BOOL isHardBlacklisted(NSString* procName)
  
 	@autoreleasepool
 	{
-		dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
-		if (!isHardBlacklisted([[NSProcessInfo processInfo] processName]))
-		{
-			oldHandler = NSGetUncaughtExceptionHandler();
-			NSSetUncaughtExceptionHandler(&unhandledExceptionHandler);
-			%init(Tweak);
-		}
-	  });
+			if (!isHardBlacklisted([[NSProcessInfo processInfo] processName]))
+			{
+				oldHandler = NSGetUncaughtExceptionHandler();
+				NSSetUncaughtExceptionHandler(&unhandledExceptionHandler);
+				%init(Tweak);
+			}
 	}
 }
 

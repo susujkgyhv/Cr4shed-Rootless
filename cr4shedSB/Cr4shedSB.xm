@@ -3,7 +3,6 @@
 #import <UIKit/UIKit.h>
 #include <dlfcn.h>
 #import <objc/runtime.h>
-#include <libxpcToolStrap.h>
 #import <libnotifications.h>
 
 #pragma clang diagnostic ignored "-Warc-performSelector-leaks"
@@ -35,7 +34,7 @@
 
 
 @interface Cr4shedSBServer : NSObject
--(NSDictionary *)retrieveappBadgeValue:(NSString *)name userInfo:(NSDictionary*)userInfo;
+-(void) showCr4shedNotification:(NSString *)name userInfo:(NSDictionary*)userInfo;
 @end
 
 @implementation Cr4shedSBServer
@@ -61,36 +60,18 @@ BOOL didInitServer = NO;
 {
 	if ((self = [super init]))
 	{
+		#define _serviceName @"com.muirey03.cr4shedSBserver"
+
+        CrossOverIPC *crossOver = [objc_getClass("CrossOverIPC") centerNamed:_serviceName type:SERVICE_TYPE_LISTENER];
+        [crossOver registerForMessageName:@"showCr4shedNotification" target:self selector:@selector(showCr4shedNotification:userInfo:)];
 		
-		void *sandyHandle = dlopen(c_rootless("/usr/lib/libsandy.dylib"), RTLD_LAZY);
-          if (sandyHandle) {
-
-              int (*__dyn_libSandy_applyProfile)(const char *profileName) = (int (*)(const char *))dlsym(sandyHandle, "libSandy_applyProfile");
-              if (__dyn_libSandy_applyProfile) {
-                 __dyn_libSandy_applyProfile("Cr4shedTweak");
-              }
-		    }
-
-		void *xpcToolHandle = dlopen(c_rootless("/usr/lib/libxpcToolStrap.dylib"), RTLD_LAZY);
-	    if (xpcToolHandle) {
-        libxpcToolStrap *libTool = [objc_getClass("libxpcToolStrap") shared];
-
-        NSString *uName = @"com.muirey03.cr4shedSBserver";
-	    
-		[libTool defineUniqueName:uName];
-        [libTool startEventWithMessageIDs:@[@"showCr4shedNotification"] uName:uName];
-		[libTool addTarget:self selector:@selector(showCr4shedNotification:userInfo:) forMsgID:@"showCr4shedNotification" uName:uName];
-
-
-		}
 	}
 	return self;
 }
 
 -(void) showCr4shedNotification:(NSString *)name userInfo:(NSDictionary*)userInfo {
 
-	// CLog(@"SB~[Cr4shedSB]~ -[showCr4shedNotification:userInfo:]~");
-
+ 
 	NSString *badgeValue = NULL; 
 	SBApplicationController *appCont = [objc_getClass("SBApplicationController") sharedInstanceIfExists];
 		if (appCont) { 
@@ -106,24 +87,16 @@ BOOL didInitServer = NO;
  
 	void *handle = dlopen(c_rootless("/usr/lib/libnotifications.dylib"), RTLD_LAZY);
 	if (handle != NULL) {                                            
-		
-		
- 	    NSString *uid = [[NSUUID UUID] UUIDString];  
-	   	NSString* bundleID = @"com.muirey03.cr4shedgui";
-		NSString* title = @"Cr4shed";
-	    
-
-		// CLog(@"userInfo : %@",userInfo);
-
-	    [objc_getClass("CPNotification") showAlertWithTitle:title
+		 
+	    [objc_getClass("CPNotification") showAlertWithTitle:@"Cr4shed"
   	                                              message:(NSString *)userInfo[@"notifContent"]
 	                                               userInfo:(NSDictionary *)userInfo[@"notifUserInfo"]
 	                                             badgeCount:(badgeValue.intValue + 1)
-	                                              soundName:nil //research UNNotificationSound
-	                                                  delay:1 //cannot be zero & cannot be < 60 if repeats is YES
+	                                              soundName:nil  
+	                                                  delay:1
 	                                                repeats:NO
-	                                               bundleId:bundleID
-	                                                   uuid:uid //specify if you need to use hideAlertWithBundleId and store the string for later use
+	                                               bundleId: @"com.muirey03.cr4shedgui"
+	                                                   uuid:[[NSUUID UUID] UUIDString]
 	                                                 silent:NO];				       				       
 	}
 

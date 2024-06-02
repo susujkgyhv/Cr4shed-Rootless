@@ -1,6 +1,7 @@
 #import <Foundation/Foundation.h>
 #include <mach/mach.h>
-#import <cr4shedd.h>
+#import <CrossOverIPC.h>
+
 
 #define CR4ProcsNeedRefreshNotificationName @"com.muirey03.cr4shed-procsNeedRefresh"
 #define CR4BlacklistDidChangeNotificationName @"com.muirey03.cr4shed-blacklistDidChange"
@@ -51,6 +52,7 @@ void showCr4shedNotification(NSString* notifContent, NSDictionary* notifUserInfo
  
 
 
+#pragma GCC diagnostic ignored "-Wunused-function"
 
 static BOOL isRootHide(void) {
 	if(access("/var/jb", F_OK) == 0) return NO;
@@ -59,7 +61,7 @@ static BOOL isRootHide(void) {
 
 static NSString *rootless(NSString *path) {
 	if (isRootHide()) {
-		return path;
+		return path; // not configured yet
 	} else {
 		return [NSString stringWithFormat:@"/var/jb%@",path];
 	}
@@ -67,7 +69,7 @@ static NSString *rootless(NSString *path) {
 
 static const char *c_rootless(const char *path) {
 	if (isRootHide()) {
-		return [NSString stringWithFormat:@"%s",path].UTF8String;
+		return [NSString stringWithFormat:@"%s",path].UTF8String; // not configured yet
 	} else {
 		return [NSString stringWithFormat:@"/var/jb%s",path].UTF8String;
 	}

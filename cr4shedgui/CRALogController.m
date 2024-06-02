@@ -144,7 +144,6 @@ NSMutableAttributedString *colorizerText(NSString *originalText, NSArray *wordsA
 	@"[",UIColorFromHEX(0xC03865),
 	@"]",UIColorFromHEX(0xC03865),
 	@"+",UIColorFromHEX(0xC03865),
- 
 
 
 	],[self invertedColor:backgroundColor]);

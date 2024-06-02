@@ -281,22 +281,15 @@ void writeStringToFile(NSString* str, NSString* path)
 
 NSString* stringFromTime(time_t t, CR4DateFormat type)
 {
-	
-		void *sandyHandle = dlopen(c_rootless("/usr/lib/libsandy.dylib"), RTLD_LAZY);
-          if (sandyHandle) {
-
-              int (*__dyn_libSandy_applyProfile)(const char *profileName) = (int (*)(const char *))dlsym(sandyHandle, "libSandy_applyProfile");
-              if (__dyn_libSandy_applyProfile) {
-                 __dyn_libSandy_applyProfile("Cr4shedTweak");
-			     __dyn_libSandy_applyProfile("libnotifications");
-				 __dyn_libSandy_applyProfile("libnotifications");
-              }
-		    }
-			
-			
+	 
 	if (!t) t = time(NULL);
 
-	NSDictionary* reply = sendAndReceiveMessage(@{@"time" : @(t), @"type" : @(type)}, CR4SHEDD_MESSAGE_STRING_FROM_TIME);
+	#define _serviceName @"com.muirey03.cr4shedd"
+	
+    CrossOverIPC *crossOver = [objc_getClass("CrossOverIPC") centerNamed:_serviceName type:SERVICE_TYPE_SENDER];
+    
+	NSDictionary *reply = [crossOver sendMessageAndReceiveReplyName:@"stringFromTime" userInfo:@{@"time" : @(t), @"type" : @(type)}];
+	
 	NSString* str = reply[@"ret"];
 	
 	//fallback if cr4shedd is not available or failed for whatever reason
@@ -347,3 +340,19 @@ mach_vm_address_t findSymbolInTask(mach_port_t task, const char* symbolName, NSS
 		*imageName = imagePath;
 	return addr;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
