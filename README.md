@@ -8,7 +8,7 @@ Thanks to [@Muirey03](https://twitter.com/muirey03) for this great tweak ,
 
 
 ## Important :
-This update needs [xpcToolStrap] and [libnotifications] , both of which we've already updated ,
+This update needs [CrossOverIPC] and [libnotifications] , both of which we've already updated ,
 
 
  
